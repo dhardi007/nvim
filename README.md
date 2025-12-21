@@ -31,12 +31,17 @@ Para tener la experiencia mas parecida a Linux, utiliza powertoys y restaura MI 
 
 ```C:\Users\Diego\AppData\Local\nvim -> SE SINCRONIZA CON -> \\wsl.localhost\archlinux\root\.config\nvim\lua\plugins```
 
+```
 A starter template for [LazyVim](https://github.com/LazyVim/LazyVim).
 R.mdefer to the [documentation](https://lazyvim.github.io/installation) to get started.
 
-Check also:
+Check also for disabled IA's:
 
-/~ [basura]+IA > README.
+nvim-wsl\~ [basura]\README
+
+and then enable it in disabled.lua
 
 If u want to set a packer.nvim version.
 O por si quieres usar packer.nvim en un futuro.
+
+```
