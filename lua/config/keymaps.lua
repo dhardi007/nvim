@@ -460,35 +460,59 @@ end
 -- =============================
 -- [⚠ BETA⚠!] KEYMAPS OLLAMA AI (LOCAL) 🦙🤖🔥️ NO REQUIERE INTERNET
 -- =============================
--- Reutiliza la lógica de gemini-cli pero apunta a tu instancia local de Ollama
 
--- Modelo global de Ollama
-vim.g.ollama_model = vim.g.ollama_model or 'deepseek-r1'
+-- Ruta del archivo de configuración
+local config_dir = vim.fn.stdpath("data") .. "/ollama"
+local config_file = config_dir .. "/model.txt"
+
+-- Función para cargar el modelo guardado
+local function load_ollama_model()
+  if vim.fn.filereadable(config_file) == 1 then
+    local model = vim.fn.readfile(config_file)[1]
+    if model and model ~= "" then
+      return model
+    end
+  end
+  return "deepseek-r1" -- Modelo por defecto
+end
+
+-- Función para guardar el modelo
+local function save_ollama_model(model)
+  vim.fn.mkdir(config_dir, "p") -- Crear directorio si no existe
+  vim.fn.writefile({ model }, config_file)
+end
+
+-- Cargar modelo al iniciar
+vim.g.ollama_model = load_ollama_model()
 
 local function open_ollama(prompt, input_text)
-  local model = vim.g.ollama_model or "deepseek-r1"
+  local model = vim.g.ollama_model
   vim.cmd("vsplit | vertical resize 50")
-
-  -- Iniciamos el terminal con ollama
   vim.cmd("term ollama run " .. model)
 
-  -- Preparamos el envío del prompt + el texto seleccionado
   local final_prompt = prompt
   if input_text and input_text ~= "" then
     final_prompt = prompt .. "\n\nAnaliza este código:\n" .. input_text
   end
 
-  -- Esperamos a que el proceso de terminal esté listo
   vim.defer_fn(function()
     if vim.b.terminal_job_id then
       vim.api.nvim_chan_send(vim.b.terminal_job_id, final_prompt .. "\n")
     end
-  end, 800) -- Delay de seguridad para que cargue el modelo
+  end, 800)
 
+  vim.cmd("startinsert")
+end
+-- Agrega esta función después de la función open_ollama
+local function show_ollama_modelfile()
+  local model = vim.g.ollama_model
+  vim.cmd("split") -- Abre una nueva ventana horizontal
+  vim.cmd("term ollama show " .. model .. " --modelfile")
   vim.cmd("startinsert")
 end
 
 local function show_ollama_menu(selected_text)
+  local current_model = vim.g.ollama_model or "deepseek-r1"
   local options = {
     "🔍 [Local] Revisar código",
     "📚 [Local] Explicar código",
@@ -496,13 +520,16 @@ local function show_ollama_menu(selected_text)
     "♻️ [Local] Refactorizar",
     "⚡ [Local] Optimizar",
     "💬 [Local] Chat Libre",
-    "⚙️ [Local] Cambiar modelo (" .. (vim.g.ollama_model or "default") .. ")",
+    "📄 [Local] Ver Modelfile (" .. current_model .. ")",
+    "⚙️ [Local] Cambiar modelo (" .. current_model .. ")",
   }
 
   vim.ui.select(options, {
-    prompt = " 󰊭 ~ Ollama (Deepseek R1):",
+    prompt = " 󰊭 ~ Ollama (" .. current_model .. "):",
   }, function(choice, idx)
-    if not choice then return end
+    if not choice then
+      return
+    end
 
     local prompts = {
       "Revisa este código y sugiere mejoras:",
@@ -510,19 +537,27 @@ local function show_ollama_menu(selected_text)
       "Debuggea este error:",
       "Refactoriza este código:",
       "Optimiza este código:",
-      "", -- Chat Libre
+      "",
     }
 
-    if idx == 7 then -- Cambiar modelo
-      vim.ui.input({ prompt = "Nuevo modelo (ej: llama3, mistral): " }, function(input)
+    if idx == 7 then -- Ver Modefile AOLLAMA
+      show_ollama_modelfile()
+    elseif idx == 8 then -- Cambiar modelo (ahora índice 8)
+      vim.ui.input({
+        prompt = "Nuevo modelo (ej: llama3, mistral, qwen2.5-coder): ",
+        default = current_model,
+      }, function(input)
         if input and input ~= "" then
           vim.g.ollama_model = input
-          vim.notify("✅ Modelo cambiado a: " .. input, vim.log.levels.INFO)
+          save_ollama_model(input) -- 🔥 GUARDAR MODELO
+          vim.notify("✅ Modelo guardado: " .. input, vim.log.levels.INFO)
         end
       end)
     elseif idx == 6 then -- Chat Libre
       vim.ui.input({ prompt = "Ollama Prompt: " }, function(input)
-        if input and input ~= "" then open_ollama(input, selected_text) end
+        if input and input ~= "" then
+          open_ollama(input, selected_text)
+        end
       end)
     else
       open_ollama(prompts[idx], selected_text)
@@ -533,13 +568,22 @@ end
 -- Mapeos para Ollama (Space + A + O)
 vim.keymap.set("n", "<leader>ao", function()
   show_ollama_menu(nil)
-end, { desc = "🦙 Abrir Ollama (Deepseek R1)" })
+end, { desc = "🦙 Abrir Ollama" })
 
 vim.keymap.set("v", "<leader>ao", function()
   vim.cmd('normal! "+y')
   local selected_text = vim.fn.getreg('"')
   show_ollama_menu(selected_text)
 end, { desc = "🦙 Enviar selección a Ollama" })
+
+-- Comando para verificar el modelo actual
+vim.api.nvim_create_user_command("OllamaModel", function()
+  vim.notify("🦙 Modelo actual: " .. vim.g.ollama_model, vim.log.levels.INFO)
+end, {})
+-- Opcional: Agrega un mapeo directo para ver el modelfile
+vim.keymap.set("n", "<leader>am", function()
+  show_ollama_modelfile()
+end, { desc = "🦙 Mostrar Modelfile del modelo actual" })
 
 -- =============================
 -- -- Solo en Arhcivos.MD | MARKDown (Gentleman config) - {no funciona bien}
