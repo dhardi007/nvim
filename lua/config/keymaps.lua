@@ -478,7 +478,7 @@ end
 
 -- Función para guardar el modelo
 local function save_ollama_model(model)
-  vim.fn.mkdir(config_dir, "p") -- Crear directorio si no existe
+  vim.fn.mkdir(config_dir, "p")
   vim.fn.writefile({ model }, config_file)
 end
 
@@ -503,12 +503,99 @@ local function open_ollama(prompt, input_text)
 
   vim.cmd("startinsert")
 end
--- Agrega esta función después de la función open_ollama
+
+-- 🆕 Función para listar modelos
+local function show_ollama_list()
+  vim.cmd("split")
+  vim.cmd("term ollama list")
+  vim.cmd("startinsert")
+end
+
+-- 🔥 FUNCIÓN MEJORADA: Ver Y EDITAR Modelfile
 local function show_ollama_modelfile()
   local model = vim.g.ollama_model
-  vim.cmd("split") -- Abre una nueva ventana horizontal
-  vim.cmd("term ollama show " .. model .. " --modelfile")
-  vim.cmd("startinsert")
+
+  -- Crear directorio para Modelfiles
+  local modelfile_dir = vim.fn.stdpath("data") .. "/ollama/modelfiles"
+  vim.fn.mkdir(modelfile_dir, "p")
+
+  -- Nombre del archivo (reemplazar : por _)
+  local safe_model_name = model:gsub(":", "_")
+  local modelfile_path = modelfile_dir .. "/" .. safe_model_name .. ".modelfile"
+
+  -- 1️⃣ Extraer Modelfile con sistema operativo detectado
+  local extract_cmd
+  if vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1 then
+    -- Windows CMD
+    extract_cmd = string.format('ollama show %s --modelfile > "%s"', model, modelfile_path)
+  else
+    -- Linux/WSL/macOS
+    extract_cmd = string.format("ollama show %s --modelfile > %s", model, vim.fn.shellescape(modelfile_path))
+  end
+
+  vim.notify("📥 Extrayendo Modelfile de: " .. model, vim.log.levels.INFO)
+  vim.fn.system(extract_cmd)
+
+  -- Verificar si se extrajo correctamente
+  if vim.v.shell_error ~= 0 then
+    vim.notify("❌ Error al extraer Modelfile. ¿Existe el modelo " .. model .. "?", vim.log.levels.ERROR)
+    return
+  end
+
+  -- 2️⃣ Abrir el archivo en Neovim
+  vim.cmd("split " .. vim.fn.fnameescape(modelfile_path))
+
+  -- 3️⃣ Configurar el buffer
+  vim.bo.filetype = "dockerfile" -- Syntax highlighting
+
+  -- 4️⃣ Agregar instrucciones al inicio
+  local instructions = {
+    "# 📝 MODELFILE DE: " .. model,
+    "# ",
+    "# 🔧 EDITA ESTE ARCHIVO Y GUARDA CON :w",
+    "# ⚡ APLICA CAMBIOS: :OllamaApply",
+    "# 📚 Docs: https://github.com/ollama/ollama/blob/main/docs/modelfile.md",
+    "# ",
+    "# EJEMPLOS DE PERSONALIZACIÓN:",
+    "# PARAMETER temperature 0.7    # Creatividad (0.0 = conservador, 1.0 = creativo)",
+    "# PARAMETER num_ctx 8192        # Contexto (tokens de memoria)",
+    "# SYSTEM \"Eres un experto en...\" # Prompt del sistema",
+    "# ",
+    "",
+  }
+
+  vim.api.nvim_buf_set_lines(0, 0, 0, false, instructions)
+
+  -- 5️⃣ Crear comando :OllamaApply (solo en este buffer)
+  vim.api.nvim_buf_create_user_command(0, "OllamaApply", function()
+    -- Guardar cambios primero
+    vim.cmd("write")
+
+    vim.ui.input({
+      prompt = "Nombre del nuevo modelo (Enter = " .. model .. "-custom): ",
+      default = model .. "-custom",
+    }, function(input)
+      if not input or input == "" then
+        return
+      end
+
+      local create_cmd = string.format("ollama create %s -f %s", input, vim.fn.shellescape(modelfile_path))
+      vim.notify("🔨 Creando modelo: " .. input .. " ...", vim.log.levels.INFO)
+
+      -- Ejecutar en terminal
+      vim.cmd("split")
+      vim.cmd("term " .. create_cmd)
+
+      -- Actualizar modelo activo después de 2 segundos
+      vim.defer_fn(function()
+        vim.g.ollama_model = input
+        save_ollama_model(input)
+        vim.notify("✅ Modelo creado y activado: " .. input, vim.log.levels.INFO)
+      end, 2000)
+    end)
+  end, { desc = "Crear modelo personalizado desde este Modelfile" })
+
+  vim.notify("📝 Edita el Modelfile. Aplica con :OllamaApply", vim.log.levels.INFO)
 end
 
 local function show_ollama_menu(selected_text)
@@ -520,7 +607,8 @@ local function show_ollama_menu(selected_text)
     "♻️ [Local] Refactorizar",
     "⚡ [Local] Optimizar",
     "💬 [Local] Chat Libre",
-    "📄 [Local] Ver Modelfile (" .. current_model .. ")",
+    "📄 [Local] Ver/Editar Modelfile (" .. current_model .. ")",
+    "📋 [Local] Listar modelos instalados",
     "⚙️ [Local] Cambiar modelo (" .. current_model .. ")",
   }
 
@@ -540,16 +628,18 @@ local function show_ollama_menu(selected_text)
       "",
     }
 
-    if idx == 7 then -- Ver Modefile AOLLAMA
+    if idx == 7 then -- Ver/Editar Modelfile
       show_ollama_modelfile()
-    elseif idx == 8 then -- Cambiar modelo (ahora índice 8)
+    elseif idx == 8 then -- Listar modelos
+      show_ollama_list()
+    elseif idx == 9 then -- Cambiar modelo
       vim.ui.input({
         prompt = "Nuevo modelo (ej: llama3, mistral, qwen2.5-coder): ",
         default = current_model,
       }, function(input)
         if input and input ~= "" then
           vim.g.ollama_model = input
-          save_ollama_model(input) -- 🔥 GUARDAR MODELO
+          save_ollama_model(input)
           vim.notify("✅ Modelo guardado: " .. input, vim.log.levels.INFO)
         end
       end)
@@ -565,7 +655,7 @@ local function show_ollama_menu(selected_text)
   end)
 end
 
--- Mapeos para Ollama (Space + A + O)
+-- Mapeos
 vim.keymap.set("n", "<leader>ao", function()
   show_ollama_menu(nil)
 end, { desc = "🦙 Abrir Ollama" })
@@ -576,14 +666,23 @@ vim.keymap.set("v", "<leader>ao", function()
   show_ollama_menu(selected_text)
 end, { desc = "🦙 Enviar selección a Ollama" })
 
--- Comando para verificar el modelo actual
+-- Comandos
 vim.api.nvim_create_user_command("OllamaModel", function()
   vim.notify("🦙 Modelo actual: " .. vim.g.ollama_model, vim.log.levels.INFO)
 end, {})
--- Opcional: Agrega un mapeo directo para ver el modelfile
+
+vim.api.nvim_create_user_command("OllamaList", function()
+  show_ollama_list()
+end, {})
+
+-- Mapeos directos
 vim.keymap.set("n", "<leader>am", function()
   show_ollama_modelfile()
-end, { desc = "🦙 Mostrar Modelfile del modelo actual" })
+end, { desc = "🦙 Ver/Editar Modelfile" })
+
+vim.keymap.set("n", "<leader>al", function()
+  show_ollama_list()
+end, { desc = "🦙 Listar modelos" })
 
 -- =============================
 -- -- Solo en Arhcivos.MD | MARKDown (Gentleman config) - {no funciona bien}
