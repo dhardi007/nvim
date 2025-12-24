@@ -759,6 +759,21 @@ vim.keymap.set("n", "<leader>al", function()
   show_ollama_list()
 end, { desc = "🦙 Listar modelos" })
 
+-- Switch / Cambiar Modelo ~ <leader>as
+vim.keymap.set("n", "<leader>as", function()
+  local current_model = vim.g.ollama_model or "deepseek-r1"
+  vim.ui.input({
+    prompt = "🦙 Nuevo modelo (actual: " .. current_model .. "): ",
+    default = current_model,
+  }, function(input)
+    if input and input ~= "" then
+      vim.g.ollama_model = input
+      save_ollama_model(input)
+      vim.notify("✅ Modelo guardado: " .. input, vim.log.levels.INFO)
+    end
+  end)
+end, { desc = "🦙 Switch/Cambiar modelo de Ollama rápido" })
+
 -- =============================
 -- -- Solo en Arhcivos.MD | MARKDown (Gentleman config) - {no funciona bien}
 -- =============================
