@@ -429,7 +429,7 @@ end
 keymap.set("n", "<leader>ag", function()
   show_gemini_menu(nil)
 end, {
-  desc = " 󰊭 ~ Abrir Gemini con menú",
+  desc = " 󰊭 🤖 ~ Abrir Gemini con menú",
 })
 
 -- Mapeo para modo visual
