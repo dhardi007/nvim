@@ -11,11 +11,11 @@ return {
     keys = {
       -- 🔍 Buscar archivos
       { "<leader>sf", "<cmd>FzfLua files<cr>", desc = " 🔍 [FZF] Files (cwd)" },
-      -- Mismo atajo, pero uso L (minúscula) para buscar archivos por que ff es usado por Telescope.
-      { "<leader>fl", "<cmd>FzfLua files<cr>", desc = " 🔍 [FZF] Files (cwd)" },
+      { "<leader>sz", "<cmd>FzfLua files<cr>", desc = " 🔍 [FZF] Files (cwd)" }, --  Z = [Fzf]
+      -- Mismo atajo, pero uso Z (minúscula) para buscar archivos por que ff es usado por Telescope. Z = [Fzf]
+      { "<leader>fz", "<cmd>FzfLua files<cr>", desc = " 🔍 [FZF] Files (cwd)" },
 
       -- 🔍 Buscar texto
-      { "<leader>sg", "<cmd>FzfLua live_grep<cr>", desc = " 🔍 [FZF] Live Grep" },
       -- Espacio + f + Shift + G para buscar con grep FZF
       { "<leader>fG", "<cmd>FzfLua live_grep<cr>", desc = " 🔍 [FZF] Live Grep" },
 
@@ -27,15 +27,9 @@ return {
         end,
         desc = "🔍 [FZF] Files (Windows)",
       },
+      -- En teoria seria lo mismo que lo de arriba, pero para WSL
       {
-        "<leader>sw", -- <-- ¡AGREGADA! según tu comment
-        function()
-          require("fzf-lua").files({ cwd = "/mnt/c/Users/diego/" })
-        end,
-        desc = "🔍 [FZF] Files (Windows)",
-      },
-      {
-        "<leader>sh",
+        "<leader>fH",
         function()
           require("fzf-lua").files({ cwd = "~" })
         end,
@@ -43,14 +37,15 @@ return {
       },
 
       -- 📋 Otros buscadores FZF
-      { "<leader>fb", "<cmd>FzfLua buffers<cr>", desc = " 🔍 [FZF] Buffers" },
+      -- { "<leader>fb", "<cmd>FzfLua buffers<cr>", desc = " 🔍 [FZF] Buffers" },
       { "<leader>fh", "<cmd>FzfLua help_tags<cr>", desc = " 🔍 [FZF] Help Tags" },
       { "<leader>fm", "<cmd>FzfLua marks<cr>", desc = " 🔍 [FZF] Marks" },
       { "<leader>fk", "<cmd>FzfLua keymaps<cr>", desc = " 🔍 [FZF] Keymaps" },
       { "<leader>fC", "<cmd>FzfLua commands<cr>", desc = " 🔍 [FZF] Commands" },
       { "<leader>fo", "<cmd>FzfLua oldfiles<cr>", desc = " 🔍 [FZF] Old Files" },
       { "<leader>f:", "<cmd>FzfLua command_history<cr>", desc = " 🔍 [FZF] Command History" },
-      { "<leader>ft", "<cmd>FzfLua tags<cr>", desc = " 🔍 [FZF] Tags" },
+      -- Espacio + f + Shift + S para buscar tagS con FZF
+      { "<leader>fS", "<cmd>FzfLua tags<cr>", desc = " 🔍 [FZF] Tags" },
     },
     config = function()
       require("fzf-lua").setup({
@@ -95,11 +90,11 @@ return {
     "nvim-mini/mini.pick",
     keys = {
       -- Ⓜ️ Mini Pick - Varios atajos
-      { "<leader>mp", "<cmd>Pick files<cr>", desc = "Ⓜ️📁 [Mini] Files" },
+      { "<leader>mp", "<cmd>Pick files<cr>", desc = "Ⓜ️📁 [Mini] Files Pro" },
       -- El unico atajo que uso de Mini para leader + f ya que ff es de Telescope y mi favorito.
-      { "<leader>fM", "<cmd>Pick files<cr>", desc = "Ⓜ️📁 [Mini] Files" },
+      { "<leader>fP", "<cmd>Pick files<cr>", desc = "Ⓜ️📁 [Mini] Files Pro" },
       -- Espacio + s + Shift + P para buscar con Mini Files
-      { "<leader>sP", "<cmd>Pick files<cr>", desc = "Ⓜ️📁 [Mini] Files" },
+      { "<leader>sP", "<cmd>Pick files<cr>", desc = "Ⓜ️📁 [Mini] Files Pro" },
 
       -- Ⓜ️ Otras funciones de Mini
       { "<leader>mP", "<cmd>Pick grep_live<cr>", desc = "Ⓜ️🔍 [Mini] Live Grep" },
