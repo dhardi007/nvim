@@ -38,14 +38,14 @@ return {
 
       -- 📋 Otros buscadores FZF
       -- { "<leader>fb", "<cmd>FzfLua buffers<cr>", desc = " 🔍 [FZF] Buffers" },
-      { "<leader>fh", "<cmd>FzfLua help_tags<cr>", desc = " 🔍 [FZF] Help Tags" },
+      { "<leader>fh", "<cmd>FzfLua help_tags<cr>", desc = " 🔍 [FZF] Help TagS" },
       { "<leader>fm", "<cmd>FzfLua marks<cr>", desc = " 🔍 [FZF] Marks" },
       { "<leader>fk", "<cmd>FzfLua keymaps<cr>", desc = " 🔍 [FZF] Keymaps" },
       { "<leader>fC", "<cmd>FzfLua commands<cr>", desc = " 🔍 [FZF] Commands" },
       { "<leader>fo", "<cmd>FzfLua oldfiles<cr>", desc = " 🔍 [FZF] Old Files" },
       { "<leader>f:", "<cmd>FzfLua command_history<cr>", desc = " 🔍 [FZF] Command History" },
       -- Espacio + f + Shift + S para buscar tagS con FZF
-      { "<leader>fS", "<cmd>FzfLua tags<cr>", desc = " 🔍 [FZF] Tags" },
+      { "<leader>fS", "<cmd>FzfLua tags<cr>", desc = " 🔍 [FZF] TagS" },
     },
     config = function()
       require("fzf-lua").setup({
