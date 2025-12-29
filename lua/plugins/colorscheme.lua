@@ -69,7 +69,10 @@ return {
             { cursor = "∙", texthl = "SCCursor" },
           },
         },
-        speed = 20, intervals = 15, threshold = 1, disable_float_win = true,
+        speed = 20,
+        intervals = 15,
+        threshold = 1,
+        disable_float_win = true,
       })
     end,
   },
@@ -214,21 +217,69 @@ return {
     priority = 100, -- Carga al final
     config = function()
       -- 🧊 CONFIGURACIÓN DE TERMINAL (Windows Terminal Blur)
+
       local function toggle_terminal_blur(enable_blur)
-        if vim.fn.has("win32") == 0 then return end -- Solo en Windows nativo
+        -- Detectar si estamos en Windows nativo o WSL
+        local is_wsl = vim.fn.filereadable("/proc/version") == 1
+          and vim.fn.readfile("/proc/version")[1]:match("microsoft") ~= nil
 
-        local settings_path = "C:/Users/Diego/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json"
+        local settings_path
+        local open_cmd
 
-        -- Script PowerShell para conmutar opacidad y acrylic
-        local ps_cmd
-        if enable_blur then
-          ps_cmd = string.format([[pwsh -NoProfile -Command "$c = Get-Content '%s' -Raw; $c = $c -replace '\"opacity\":\s*\d+', '\"opacity\": 1'; $c = $c -replace '\"useAcrylic\":\s*false', '\"useAcrylic\": true'; Set-Content '%s' $c"]], settings_path, settings_path)
+        if is_wsl then
+          -- Rutas para WSL
+          settings_path =
+            "/mnt/c/Users/Diego/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json"
+          open_cmd = string.format("notepad.exe '%s'", settings_path)
         else
-          ps_cmd = string.format([[pwsh -NoProfile -Command "$c = Get-Content '%s' -Raw; $c = $c -replace '\"opacity\":\s*\d+', '\"opacity\": 90'; $c = $c -replace '\"useAcrylic\":\s*true', '\"useAcrylic\": false'; Set-Content '%s' $c"]], settings_path, settings_path)
+          -- Rutas para Windows nativo
+          settings_path =
+            "C:/Users/Diego/AppData/Local/Packages/Microsoft.WindowsTerminal_8wekyb3d8bbwe/LocalState/settings.json"
+          open_cmd = string.format('notepad "%s"', settings_path)
         end
 
-        -- Ejecutar en segundo plano para no bloquear
-        vim.fn.jobstart(ps_cmd)
+        -- Script PowerShell para modificar el JSON
+        local ps_cmd
+        if enable_blur then
+          ps_cmd = string.format(
+            [[pwsh -NoProfile -Command "$c = Get-Content '%s' -Raw; $c = $c -replace '\"opacity\":\s*\d+', '\"opacity\": 1'; $c = $c -replace '\"useAcrylic\":\s*false', '\"useAcrylic\": true'; Set-Content '%s' $c"]],
+            settings_path,
+            settings_path
+          )
+        else
+          ps_cmd = string.format(
+            [[pwsh -NoProfile -Command "$c = Get-Content '%s' -Raw; $c = $c -replace '\"opacity\":\s*\d+', '\"opacity\": 90'; $c = $c -replace '\"useAcrylic\":\s*true', '\"useAcrylic\": false'; Set-Content '%s' $c"]],
+            settings_path,
+            settings_path
+          )
+        end
+
+        -- 1. Ejecutar modificación del JSON
+        vim.fn.jobstart(ps_cmd, {
+          on_exit = function(_, exit_code)
+            if exit_code == 0 then
+              -- 2. Abrir el archivo con notepad para forzar reload de WT
+              vim.defer_fn(function()
+                if is_wsl then
+                  -- En WSL usamos cmd.exe para ejecutar notepad
+                  vim.fn.jobstart(string.format("cmd.exe /c start /min %s", open_cmd), { detach = true })
+                else
+                  -- En Windows nativo
+                  vim.fn.jobstart(string.format([[start /MIN %s]], open_cmd), { detach = true })
+                end
+
+                -- 3. Cerrar notepad automáticamente después de 1 segundo
+                vim.defer_fn(function()
+                  if is_wsl then
+                    vim.fn.jobstart("taskkill.exe /IM notepad.exe /F", { detach = true })
+                  else
+                    vim.fn.jobstart([[taskkill /IM notepad.exe /F]], { detach = true })
+                  end
+                end, 1000)
+              end, 500)
+            end
+          end,
+        })
       end
 
       -- Estados internos
@@ -237,7 +288,6 @@ return {
 
       -- Obtener color de fondo según el tema activo (Dinámico)
       local function get_theme_background_color()
-        -- Intentar obtener el color Normal actual
         local normal = vim.api.nvim_get_hl(0, { name = "Normal" })
         if normal.bg then
           return string.format("#%06x", normal.bg)
@@ -445,4 +495,3 @@ return {
     end,
   },
 }
-
