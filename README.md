@@ -1,4 +1,4 @@
-# 💤 LazyVim - Configuración Universal
+> # 💤 LazyVim - Configuración Universal
 
 > **Setup compatible con Linux Hyprland, Windows y WSL** | LazyVim Starter Template
 
