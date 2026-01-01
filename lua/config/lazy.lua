@@ -98,6 +98,7 @@ require("lazy").setup({
 
     -- Tus plugins personalizados
     { import = "plugins" },
+    { "ziontee113/move.nvim" },
   },
   defaults = {
     lazy = false,
