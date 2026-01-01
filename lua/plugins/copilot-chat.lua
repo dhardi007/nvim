@@ -1,4 +1,7 @@
 -- 🐐🗣️🔥️✍️ NO REQUIERE API  USA : Copilot auth
+-- ✍️ Activar con:
+-- CopilotChat
+-- Te logeas y wala! puedes usar el CHAT! [por un mes xd]
 --
 -- PARA QUE FUNCIONE DEBES DE ELIMINAR CMP.lua
 --

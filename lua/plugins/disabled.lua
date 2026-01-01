@@ -1,5 +1,7 @@
 -- 💸💳💰 DONDE ESTA CHATGPT? COMO IA ES TREMENDA.. PERO NO ES GRATIS PARA INTEGRARLO EN NVIM DIRECTAMENTE. Al igual que Avante [avane/cursor es mejor]
 --
+-- SOLO PUEDES USAR COPILOT || SUPERMAVEN || TABNINE || Para autocompletar TEXTO!!!
+--
 -- PARA QUE FUNCIONE DEBES DE ELIMINAR CMP.lua
 --
 -- PARA ACTIVAR CIERTAS IAS NECESITAS MODIFICAR CIERTOS ARCHIVOS
@@ -35,12 +37,12 @@ return {
   },
   {
     "zbirenbaum/copilot.lua",
-    enabled = true,
+    enabled = false,
   },
   { "supermaven-nvim", enabled = true },
   {
-    "codota/tabnine-nvim",
-    enabled = true,
+    "codota/tabnine-nvim", -- el autocompletado es mierda (no me funciona), y requiere app externa :/
+    enabled = false,
   },
   "folke/snacks.nvim",
   enabled = false,

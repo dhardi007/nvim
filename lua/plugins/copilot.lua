@@ -1,4 +1,7 @@
 -- 🐐🗣️🔥️✍️ NO REQUIERE API  USA : Copilot auth
+-- ✍️ Activar con:
+-- Copilot auth
+-- Te logeas y wala! puedes usar el autocompletado! [por un mes xd]
 --
 -- PARA QUE FUNCIONE DEBES DE ELIMINAR CMP.lua
 --
@@ -22,6 +25,8 @@ return {
         auto_trigger = true,
         keymap = {
           accept = "<Tab>", -- acepta sugerencia
+          dismiss = "<C-]>", -- cierra sugerencia
+          accept_word = "<C-Enter>", -- antes estaba como C-j
         },
       },
       filetypes = {

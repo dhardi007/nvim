@@ -1,4 +1,7 @@
 -- Archivo: .config/nvim/lua/plugins/supermaven.lua
+-- ✍️ Activar con:
+-- SupermavenUseFree
+-- Te logeas y wala! puedes usar el autocompletado! [por un mes xd]
 
 -- 🐐🗣️🔥️✍️ NO REQUIERE API: es completamente gratis
 --
@@ -22,7 +25,7 @@ return {
       keymaps = {
         accept_suggestion = "<Tab>",
         clear_suggestion = "<C-]>",
-        accept_word = "<C-j>",
+        accept_word = "<C-Enter>", -- antes estaba como C-j
         -- El keymap 'dismiss_suggestion' ya no se menciona en la config por defecto,
         -- pero puedes mantenerlo si lo necesitas, o usar la opción por defecto si existe.
       },

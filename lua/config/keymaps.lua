@@ -222,7 +222,7 @@ vim.keymap.set("n", "<A-6>", "<cmd>BufferLineGoToBuffer 6<CR>", { desc = "Buffer
 vim.keymap.set("n", "<A-7>", "<cmd>BufferLineGoToBuffer 7<CR>", { desc = "Buffer 7" })
 vim.keymap.set("n", "<A-8>", "<cmd>BufferLineGoToBuffer 8<CR>", { desc = "Buffer 8" })
 vim.keymap.set("n", "<A-9>", "<cmd>BufferLineGoToBuffer 9<CR>", { desc = "Buffer 9" })
-vim.keymap.set("n", "<A-0>", "<cmd>BufferLineGoToBuffer -1<CR>", { desc = "Último Buffer" })-- Activar backspace+Control - MODO INSERCION COMO EN VSCODE!!! = Ctrl W
+vim.keymap.set("n", "<A-0>", "<cmd>BufferLineGoToBuffer -1<CR>", { desc = "Último Buffer" }) -- Activar backspace+Control - MODO INSERCION COMO EN VSCODE!!! = Ctrl W
 vim.api.nvim_set_keymap("i", "<C-H>", "<C-W>", { noremap = true, silent = true })
 
 -- =============================
@@ -230,7 +230,7 @@ vim.api.nvim_set_keymap("i", "<C-H>", "<C-W>", { noremap = true, silent = true }
 -- =============================
 
 -- Activar backspace+Control - MODO INSERCION COMO EN VSCODE!!! = Ctrl W
-  vim.api.nvim_set_keymap("i", "<C-H>", "<C-W>", { noremap = true, silent = true })
+vim.api.nvim_set_keymap("i", "<C-H>", "<C-W>", { noremap = true, silent = true })
 vim.api.nvim_set_keymap("i", "<C-BS>", "<C-W>", { noremap = true, silent = true })
 
 -- 🚨📌🗿🔥Mapeo para Ctrl + backspace a Ctrl + W en el modo de línea de comandos (la : )🚨📌🗿🔥
@@ -904,7 +904,7 @@ if has_claude then
   end, { desc = "Claude: cerrar panel" })
 end
 
- =============================
+-- =============================
 -- LIVE SERVER, deploy, DOCKER 
 -- =============================
 
