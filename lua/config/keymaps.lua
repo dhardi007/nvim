@@ -185,7 +185,7 @@ vim.keymap.set("n", "<leader>an", function()
   if name ~= "" then
     vim.cmd("tabnew " .. dir .. "/" .. name)
   end
-end, { noremap = true, silent = true, desc = "Nuevo archivo [add new file]" })
+end, { noremap = true, silent = true, desc = "  Nuevo archivo [add new file]" })
 
 -- keymap.set("n", "<C-t>", ":tabnew<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-t>", function()
@@ -363,103 +363,9 @@ vim.keymap.set("n", "<leader>dd", function()
   require("snacks").dashboard.open()
 end, { desc = "Abrir dashboard de Snacks" })
 
--- =============================
--- KEYMAPS GEMINI AI 🐐🗣️🔥️✍️ NO REQUIERE API
--- =============================
--- Aqui veras:
--- Gemini-cli que abre al lado en vertical [Gemini > Copilot, ofrece mas prompts GRATIS]
--- Funcion que selecciona y copia el texto para enviarlo a Gemini
--- Mapeo para salir del terminal con ESC
-vim.api.nvim_set_keymap("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
-
-local function open_gemini(prompt, input_text)
-  local root = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
-  vim.cmd("vsplit | vertical resize 50")
-  local cmd = "gemini --prompt-interactive '" .. prompt .. "' --include-directories " .. root
-  vim.cmd("term " .. cmd)
-  if input_text and input_text ~= "" then
-    vim.defer_fn(function()
-      vim.api.nvim_chan_send(vim.b.terminal_job_id, input_text .. "\n")
-    end, 500)
-  end
-  vim.cmd("startinsert")
-end
-
-local function show_gemini_menu(selected_text)
-  local options = {
-    "🔍 Revisar código",
-    "📚 Explicar código",
-    "🐛 Debuggear error",
-    "♻️ Refactorizar",
-    "⚡ Optimizar",
-    "💬 Personalizado [Abrir gemini]",
-  }
-
-  vim.ui.select(options, {
-    prompt = " 󰊭 ~ Selecciona acción:",
-  }, function(choice, idx)
-    if not choice then
-      return
-    end
-
-    local prompts = {
-      "Revisa este código y sugiere mejoras:",
-      "Explica este código paso a paso:",
-      "Debuggea este error:",
-      "Refactoriza este código:",
-      "Optimiza este código:",
-      "", -- Personalizado
-    }
-
-    if idx == 6 then -- Opción personalizada
-      vim.ui.input({
-        prompt = "Tu prompt: ",
-      }, function(input)
-        if input and input ~= "" then
-          open_gemini(input, selected_text)
-        end
-      end)
-    else
-      open_gemini(prompts[idx], selected_text)
-    end
-  end)
-end
-
--- Mapeo para modo normal
-keymap.set("n", "<leader>ag", function()
-  show_gemini_menu(nil)
-end, {
-  desc = " 󰊭 🤖 ~ Abrir Gemini con menú",
-})
-
--- Mapeo para modo visual
-keymap.set("v", "<leader>ag", function()
-  -- Copiar texto seleccionado al portapapeles del sistema
-  vim.cmd('normal! "+y')
-  local selected_text = vim.fn.getreg('"')
-  show_gemini_menu(selected_text)
-end, {
-  desc = " 󰊭 ~ Enviar selección a Gemini",
-})
--- Mapeos para el plugin de Geminia.lua gentleman (si está instalado) ~[💸💳💰REQUIERE API:]
-local has_gemini, gemini_chat = pcall(require, "gemini.chat")
-if has_gemini then
-  keymap.set("n", "<leader>gg", function()
-    gemini_chat.prompt_current()
-  end, { desc = "Gemini: prompt en buffer actual" })
-
-  keymap.set("v", "<leader>g", function()
-    gemini_chat.prompt_selected()
-  end, { desc = "Gemini: prompt con texto seleccionado" })
-
-  keymap.set("n", "<leader>gl", function()
-    gemini_chat.prompt_line()
-  end, { desc = "Gemini: prompt con línea actual" })
-end
-
--- =============================
--- [⚠ BETA⚠!] KEYMAPS OLLAMA AI (LOCAL) 🦙🤖🔥️ NO REQUIERE INTERNET
--- =============================
+-- ==================================================================
+-- [⚠ BETA⚠!] KEYMAPS OLLAMA AI (LOCAL) 󰎣 🦙🤖🔥️ NO REQUIERE INTERNET
+-- ==================================================================
 
 -- Ruta del archivo de configuración
 local config_dir = vim.fn.stdpath("data") .. "/ollama"
@@ -668,7 +574,7 @@ local function show_ollama_modelfile()
         vim.notify("✅ Modelo creado y activado: " .. input, vim.log.levels.INFO)
       end, 2000)
     end)
-  end, { desc = "Crear modelo personalizado desde este Modelfile" })
+  end, { desc = " 󰎣 Crear modelo personalizado desde este Modelfile" })
 
   vim.notify("📝 Edita el Modelfile. Aplica con :OllamaApply", vim.log.levels.INFO)
 end
@@ -733,13 +639,13 @@ end
 -- Mapeos
 vim.keymap.set("n", "<leader>ao", function()
   show_ollama_menu(nil)
-end, { desc = "🦙 Abrir Ollama" })
+end, { desc = " 󰎣  🦙 Abrir Ollama" })
 
 vim.keymap.set("v", "<leader>ao", function()
   vim.cmd('normal! "+y')
   local selected_text = vim.fn.getreg('"')
   show_ollama_menu(selected_text)
-end, { desc = "🦙 Enviar selección a Ollama" })
+end, { desc = " 󰎣 🦙 Enviar selección a Ollama" })
 
 -- Comandos
 vim.api.nvim_create_user_command("OllamaModel", function()
@@ -753,11 +659,11 @@ end, {})
 -- Mapeos directos
 vim.keymap.set("n", "<leader>am", function()
   show_ollama_modelfile()
-end, { desc = "🦙 Ver/Editar Modelfile" })
+end, { desc = " 󰎣 🦙 Ver/Editar Modelfile" })
 
 vim.keymap.set("n", "<leader>al", function()
   show_ollama_list()
-end, { desc = "🦙 Listar modelos" })
+end, { desc = " 󰎣 🦙 Listar modelos" })
 
 -- Switch / Cambiar Modelo ~ <leader>as
 vim.keymap.set("n", "<leader>as", function()
@@ -772,7 +678,210 @@ vim.keymap.set("n", "<leader>as", function()
       vim.notify("✅ Modelo guardado: " .. input, vim.log.levels.INFO)
     end
   end)
-end, { desc = "🦙 Switch/Cambiar modelo de Ollama rápido" })
+end, { desc = " 󰎣 🦙 Switch/Cambiar modelo de Ollama rápido" })
+
+-- ===================================================================================
+-- Utilidades para Claude v2.1.6] ~ [by dizzi1222] - Yanked proyecto, copiar Proyecto
+-- ===================================================================================
+-- Función helper para obtener información del repositorio Git
+local function get_repo_context()
+  local cwd = vim.fn.getcwd()
+  local git_root = vim.fn.system("git -C " .. vim.fn.shellescape(cwd) .. " rev-parse --show-toplevel 2>/dev/null")
+
+  if vim.v.shell_error == 0 then
+    git_root = git_root:gsub("\n", "")
+    local repo_name = vim.fn.fnamemodify(git_root, ":t")
+    local branch = vim.fn
+      .system("git -C " .. vim.fn.shellescape(git_root) .. " rev-parse --abbrev-ref HEAD 2>/dev/null")
+      :gsub("\n", "")
+
+    return {
+      is_git = true,
+      root = git_root,
+      name = repo_name,
+      branch = branch,
+      relative_path = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":~:."),
+    }
+  end
+
+  return {
+    is_git = false,
+    root = cwd,
+    name = vim.fn.fnamemodify(cwd, ":t"),
+    relative_path = vim.fn.expand("%:t"),
+  }
+end
+
+-- Función para construir contexto rico para Claude
+local function build_claude_context(selected_text, custom_instruction)
+  local repo = get_repo_context()
+  local file_path = vim.fn.expand("%:p")
+  local file_type = vim.bo.filetype
+  local line_num = vim.fn.line(".")
+
+  -- Convertir ruta de WSL a Windows si es necesario
+  local display_path = file_path
+  if vim.fn.has("wsl") == 1 then
+    display_path = vim.fn.system("wslpath -w " .. vim.fn.shellescape(file_path)):gsub("\n", "")
+  end
+
+  local context = "📁 Proyecto: " .. repo.name .. "\n"
+
+  if repo.is_git then
+    context = context .. "🌿 Branch: " .. repo.branch .. "\n"
+  end
+
+  context = context .. "📄 Archivo: " .. repo.relative_path .. "\n"
+  context = context .. "🔤 Tipo: " .. (file_type ~= "" and file_type or "text") .. "\n"
+  context = context .. "📍 Línea: " .. line_num .. "\n"
+  context = context .. "💻 Sistema: " .. (vim.fn.has("wsl") == 1 and "WSL" or vim.loop.os_uname().sysname) .. "\n\n"
+
+  if custom_instruction then
+    context = context .. "📝 Instrucción: " .. custom_instruction .. "\n\n"
+  end
+
+  if selected_text and selected_text ~= "" then
+    context = context .. "```" .. file_type .. "\n" .. selected_text .. "\n```\n"
+  end
+
+  return context
+end
+-- =============================
+-- KEYMAPS PARA CLAUDE AI
+-- =============================
+-- Atajo rápido: Copiar TODO el contexto actual al portapapeles
+vim.keymap.set("n", "<leader>ay", function()
+  local repo = get_repo_context()
+  local full_file = vim.fn.join(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
+  local context = build_claude_context(full_file, "Aquí está el archivo completo:")
+
+  vim.fn.setreg("+", context)
+  vim.notify("📋 Archivo completo + contexto copiado\n📁 " .. repo.name, vim.log.levels.INFO)
+end, { desc = "  📋 Copiar archivo completo con contexto" })
+
+-- Atajo ultra-rápido: Solo copiar código seleccionado (sin abrir navegador)
+vim.keymap.set("v", "<leader>ay", function()
+  vim.cmd('normal! "+y')
+  local selected_text = vim.fn.getreg('"')
+  local context = build_claude_context(selected_text, nil)
+
+  vim.fn.setreg("+", context)
+  vim.notify("✅ Código + contexto copiado al portapapeles", vim.log.levels.INFO)
+end, { desc = "  📋 Copiar selección con contexto (sin abrir)" })
+
+-- Comando para ver información del repositorio actual
+vim.api.nvim_create_user_command("ClaudeInfo", function()
+  local repo = get_repo_context()
+  local info = "📊 INFORMACIÓN DEL PROYECTO\n\n"
+  info = info .. "📁 Nombre: " .. repo.name .. "\n"
+  info = info .. "📂 Root: " .. repo.root .. "\n"
+
+  if repo.is_git then
+    info = info .. "🌿 Branch: " .. repo.branch .. "\n"
+    info = info .. "✅ Git: Sí\n"
+  else
+    info = info .. "❌ Git: No\n"
+  end
+
+  info = info .. "📄 Archivo: " .. repo.relative_path .. "\n"
+  info = info .. "💻 Sistema: " .. (vim.fn.has("wsl") == 1 and "WSL" or vim.loop.os_uname().sysname)
+
+  vim.notify(info, vim.log.levels.INFO)
+end, { desc = "Ver info del proyecto para Claude" })
+
+-- =============================
+-- KEYMAPS GEMINI AI 🐐🗣️🔥️✍️ NO REQUIERE API
+-- =============================
+-- Aqui veras:
+-- Gemini-cli que abre al lado en vertical [Gemini > Copilot, ofrece mas prompts GRATIS]
+-- Funcion que selecciona y copia el texto para enviarlo a Gemini
+-- Mapeo para salir del terminal con ESC
+vim.api.nvim_set_keymap("t", "<Esc>", "<C-\\><C-n>", { noremap = true })
+
+local function open_gemini(prompt, input_text)
+  local root = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
+  vim.cmd("vsplit | vertical resize 50")
+  local cmd = "gemini --prompt-interactive '" .. prompt .. "' --include-directories " .. root
+  vim.cmd("term " .. cmd)
+  if input_text and input_text ~= "" then
+    vim.defer_fn(function()
+      vim.api.nvim_chan_send(vim.b.terminal_job_id, input_text .. "\n")
+    end, 500)
+  end
+  vim.cmd("startinsert")
+end
+
+local function show_gemini_menu(selected_text)
+  local options = {
+    "🔍 Revisar código",
+    "📚 Explicar código",
+    "🐛 Debuggear error",
+    "♻️ Refactorizar",
+    "⚡ Optimizar",
+    "💬 Personalizado [Abrir gemini]",
+  }
+
+  vim.ui.select(options, {
+    prompt = " 󰊭 ~ Selecciona acción:",
+  }, function(choice, idx)
+    if not choice then
+      return
+    end
+
+    local prompts = {
+      "Revisa este código y sugiere mejoras:",
+      "Explica este código paso a paso:",
+      "Debuggea este error:",
+      "Refactoriza este código:",
+      "Optimiza este código:",
+      "", -- Personalizado
+    }
+
+    if idx == 6 then -- Opción personalizada
+      vim.ui.input({
+        prompt = "Tu prompt: ",
+      }, function(input)
+        if input and input ~= "" then
+          open_gemini(input, selected_text)
+        end
+      end)
+    else
+      open_gemini(prompts[idx], selected_text)
+    end
+  end)
+end
+
+-- Mapeo para modo normal
+keymap.set("n", "<leader>ag", function()
+  show_gemini_menu(nil)
+end, {
+  desc = " 󰊭  ~ Abrir Gemini con menú",
+})
+
+-- Mapeo para modo visual
+keymap.set("v", "<leader>ag", function()
+  -- Copiar texto seleccionado al portapapeles del sistema
+  vim.cmd('normal! "+y')
+  local selected_text = vim.fn.getreg('"')
+  show_gemini_menu(selected_text)
+end, {
+  desc = " 󰊭 ~ Enviar selección a Gemini",
+})
+-- Mapeos para el plugin de Geminia.lua gentleman (si está instalado) ~[💸💳💰REQUIERE API:]
+local has_gemini, gemini_chat = pcall(require, "gemini.chat")
+if has_gemini then
+  keymap.set("n", "<leader>gg", function()
+    gemini_chat.prompt_current()
+  end, { desc = " 󰊭 Gemini: prompt en buffer actual" })
+
+  keymap.set("v", "<leader>g", function()
+    gemini_chat.prompt_selected()
+  end, { desc = " 󰊭 Gemini: prompt con texto seleccionado" })
+
+  keymap.set("n", "<leader>gl", function()
+    gemini_chat.prompt_line()
+  end, { desc = " 󰊭 Gemini: prompt con línea actual" })
+end
 
 -- =============================
 -- -- Solo en Arhcivos.MD | MARKDown (Gentleman config) - {no funciona bien}
@@ -886,22 +995,22 @@ if has_claude then
   -- Visual: completar selección con Claude
   vim.keymap.set("v", "<leader>ac", function()
     claude.complete_selection()
-  end, { desc = "Claude: completar selección" })
+  end, { desc = "  Claude: completar selección" })
 
   -- Normal: abrir panel de Claude
   vim.keymap.set("n", "<leader>aa", function()
     claude.open_panel()
-  end, { desc = "Claude: abrir panel" })
+  end, { desc = "  Claude: abrir panel" })
 
   -- Optional: enviar línea actual a Claude y obtener respuesta
-  vim.keymap.set("n", "<leader>al", function()
+  vim.keymap.set("n", "<leader>aL", function()
     claude.complete_line()
-  end, { desc = "Claude: completar línea actual" })
+  end, { desc = "  Claude: completar línea actual" })
 
   -- Optional: cerrar panel de Claude
   vim.keymap.set("n", "<leader>ax", function()
     claude.close_panel()
-  end, { desc = "Claude: cerrar panel" })
+  end, { desc = "  Claude: cerrar panel" })
 end
 
 -- =============================
