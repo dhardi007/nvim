@@ -93,6 +93,12 @@ if is_windows then
   -- Configuración Windows
   vim.g.node_host_prog = "C:\\Users\\Diego.DESKTOP-0CQHRL5\\AppData\\Roaming\\npm\\node_modules\\neovim\\bin\\cli.js"
   vim.env.PATH = "C:\\Users\\Diego.DESKTOP-0CQHRL5\\scoop\\apps\\nodejs-lts\\22.18.0;" .. vim.env.PATH
+    -- 🔧 CONFIGURAR POWERSHELL COMO SHELL PREDETERMINADO
+  vim.opt.shell = "pwsh.exe" -- o "powershell.exe" para PowerShell 5.1
+  -- vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
+  vim.opt.shellquote = ""
+  vim.opt.shellxquote = ""
+  
   -- Auto-pywal para Windows
   require("config.Windows-pywal-wiwalAuto").setup()
 elseif is_unix then
