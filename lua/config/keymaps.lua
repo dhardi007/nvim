@@ -253,24 +253,20 @@ end
 
 -- Activar backspace+Control - MODO INSERCION COMO EN VSCODE!!! = Ctrl W
 vim.api.nvim_set_keymap("i", "<C-H>", "<C-W>", { noremap = true, silent = true })
-vim.api.nvim_set_keymap("i", "<C-BS>", "<C-W>", { noremap = true, silent = true })
+-- vim.api.nvim_set_keymap("i", "<C-BS>", "<C-W>", { noremap = true, silent = true })
 
 -- 🚨📌🗿🔥Mapeo para Ctrl + backspace a Ctrl + W en el modo de línea de comandos (la : )🚨📌🗿🔥
--- Mapeo que usa una función para asegurar que funciona en la línea de comandos
-if is_wsl or is_windows then
-  vim.keymap.set("c", "<C-BS>", function()
-    -- Cierra cualquier ventana de completado y luego ejecuta el comando Ctrl-W
-    -- El comando \b borra una palabra hacia atrás
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-W>", true, true, true), "n", true)
-  end, { noremap = true, silent = true })
-else
-  vim.keymap.set("c", "<C-H>", function()
-    -- Cierra cualquier ventana de completado y luego ejecuta el comando Ctrl-W
-    -- El comando \b borra una palabra hacia atrás
-    vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-W>", true, true, true), "n", true)
-  end, { noremap = true, silent = true })
-end
+vim.keymap.set("c", "<C-BS>", function()
+  -- Cierra cualquier ventana de completado y luego ejecuta el comando Ctrl-W
+  -- El comando \b borra una palabra hacia atrás
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-W>", true, true, true), "n", true)
+end, { noremap = true, silent = true })
 
+vim.keymap.set("c", "<C-H>", function()
+  -- Cierra cualquier ventana de completado y luego ejecuta el comando Ctrl-W
+  -- El comando \b borra una palabra hacia atrás
+  vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-W>", true, true, true), "n", true)
+end, { noremap = true, silent = true })
 -- ---------------------------------------------------|-
 --👹📌🗿🔥Mismo mapeo pero para el modo de inserción en buffers normales👹📌🗿🔥
 -- Función mejorada para borrar palabras en buffers de snacks
