@@ -20,6 +20,7 @@ if vim.g.scode then
   vim.keymap.set("v", "p", "P")
   vim.keymap.set("n", "U", "<C-r>")
   vim.keymap.set("n", "<Esc>", ":nohlsearch<cr>")
+  vim.keymap.set("t", "<Esc>", ":nohlsearch<cr>")
   -- causa conflicto en WINDOWS:
   -- vim.cmd("nmap k gj")
   -- vim.cmd("nmap l gk")
@@ -93,12 +94,12 @@ if is_windows then
   -- Configuración Windows
   vim.g.node_host_prog = "C:\\Users\\Diego.DESKTOP-0CQHRL5\\AppData\\Roaming\\npm\\node_modules\\neovim\\bin\\cli.js"
   vim.env.PATH = "C:\\Users\\Diego.DESKTOP-0CQHRL5\\scoop\\apps\\nodejs-lts\\22.18.0;" .. vim.env.PATH
-    -- 🔧 CONFIGURAR POWERSHELL COMO SHELL PREDETERMINADO
+  -- 🔧 CONFIGURAR POWERSHELL COMO SHELL PREDETERMINADO
   vim.opt.shell = "pwsh.exe" -- o "powershell.exe" para PowerShell 5.1
   -- vim.opt.shellcmdflag = "-NoLogo -NoProfile -ExecutionPolicy RemoteSigned -Command"
   vim.opt.shellquote = ""
   vim.opt.shellxquote = ""
-  
+
   -- Auto-pywal para Windows
   require("config.Windows-pywal-wiwalAuto").setup()
 elseif is_unix then
@@ -110,6 +111,12 @@ end
 -- bootstrap lazy.nvim, LazyVim and your plugins
 require("config.lazy")
 require("config.keymaps")
+require("config.keymaps.ollama-keys") -- keymaps para LocalAI [Ollama]
+require("config.keymaps.gemini-keys") -- keymaps para Gemini AI
+require("config.keymaps.give-context") -- keymaps para utilidades IA
+require("config.keymaps.close-buffers") -- keymaps para manipular buffers
+require("config.keymaps.open-explorer") -- keymaps para Abrir Explorer/CopyPaste
+-- Resumen pochenkro de keymaps: keymapds.md    
 
 -- # PARA HACER FUNCIONAR GENTLEMAN AIS
 require("config.nodejs").setup({ silent = true })

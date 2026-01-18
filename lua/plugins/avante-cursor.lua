@@ -184,13 +184,57 @@ return {
         end,
       })
 
+      -- Prerequisites
+      --
+      -- Before using ACP agents, ensure you have the required tools installed:
+      --
+      --     For Gemini CLI: Install the gemini CLI tool and set your GEMINI_API_KEY
+      --     For Claude Code: Install the acp-claude-code package via npm and set your ANTHROPIC_API_KEY
+      --  ACP providers offer several advantages over traditional API-based providers:
+
+      -- Ignora ACP [& Zen Code editor] Y pasa a configurar las IAS [traditional]
       return {
         -- add any opts here
         -- for example
-        provider = "copilot",
+        provider = "ollama", -- | otras opciones | copilot | gemini-cli | claude-code | gemini | goose | moonshot | kimi-cli
         providers = {
+          -- Copilot  -- ApiKEY = 💀 Pago $$$ ☠️
           copilot = {
-            model = "claude-sonnet-4",
+            model = "claude-sonnet-4", -- yep Copilot Premium soporta CLAUDE 🗿
+          },
+          -- Ollama 󰎣 ⭕ -- Local = Gratis 💸🐐
+          ollama = {
+            model = "deepseek-v3.2:cloud", -- | otras opciones | qwq:32b | llama3:8b | llama3:32b | vicuna-13b:8b | vicuna-13b:32b | 󰅟  PERO USO CLOUD ☁️
+            is_env_set = require("avante.providers.ollama").check_endpoint_alive,
+          },
+          -- Gemini  --  ApiKEY = Gratis 💸🐐
+          gemini = {
+            api_key_name = "GEMINI_API_KEY", -- export en ~/.zshrc
+            model = "gemini-2.0-flash-exp",
+          },
+          --  Moonshot 🚀 -- ApiKEY = 💀 Pago $$$ ☠️
+          moonshot = {
+            endpoint = "https://api.moonshot.ai/v1",
+            model = "kimi-k2-0711-preview",
+            timeout = 30000, -- Timeout in milliseconds
+            extra_request_body = {
+              temperature = 0.75,
+              max_tokens = 32768,
+            },
+          },
+          -- Claude  -- ApiKEY = 💀 Pago $$$ ☠️
+          claude = {
+            endpoint = "https://api.anthropic.com",
+            model = "claude-sonnet-4-20250514",
+            timeout = 30000, -- Timeout in milliseconds
+            extra_request_body = {
+              temperature = 0.75,
+              max_tokens = 20480,
+            },
+          },
+          -- 👽 Morph
+          morph = {
+            model = "morph-v3-large",
           },
         },
         cursor_applying_provider = "copilot",

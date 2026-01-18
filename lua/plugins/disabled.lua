@@ -32,14 +32,14 @@ return {
     enabled = true,
   },
   {
-    "CopilotC-Nvim/CopilotChat.nvim",
+    "CopilotC-Nvim/CopilotChat.nvim", -- no funciona "Thinking..."
     enabled = false,
   },
   {
     "zbirenbaum/copilot.lua",
     enabled = true,
   },
-  -- 󰙯 Discord Presence plugin's for Neovim 
+  -- 󰙯 Discord Presence plugin's for Neovim  .
   {
     "andweeb/presence.nvim",
     enabled = false,
@@ -61,7 +61,7 @@ return {
   },
   {
     "olimorris/codecompanion.nvim",
-    enabled = true,
+    enabled = false,
   },
   {
     "tris203/precognition.nvim",

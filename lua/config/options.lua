@@ -62,3 +62,4 @@ opt.signcolumn = "yes"
 opt.conceallevel = 2
 -- Permite cambiar de buffer sin guardar (oculta en lugar de cerrar)
 vim.opt.hidden = true
+vim.opt.timeoutlen = 300 -- Default es 1000ms, reduce a 300ms

@@ -29,7 +29,7 @@ return {
       },
 
       -- 📋 UTILIDADES
-      { "<leader>h", "<cmd>FzfLua help_tags<cr>", desc = " 🔍 [FZF] Help" },
+      { "<leader>fh", "<cmd>FzfLua help_tags<cr>", desc = " 🔍 [FZF] Help" },
       -- { "<leader>fm", "<cmd>FzfLua marks<cr>", desc = " 🔍 [FZF] Marks" },
       { "<leader>fk", "<cmd>FzfLua keymaps<cr>", desc = " 🔍 [FZF] Keymaps" },
       -- { "<leader>fb", "<cmd>FzfLua buffers<cr>", desc = " 🔍 [FZF] Buffers" },

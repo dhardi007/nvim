@@ -1,3 +1,4 @@
+-- /001 󰢱  codecompanion-notifier.lua
 local M = {}
 
 local uv = vim.uv
