@@ -1,5 +1,5 @@
 -- Extract from: keymaps.lua
--- Resumen pochenkro de keymaps: keymapds.md    
+-- Resumen pochenkro en: ../../docs/neovim-keymaps.md    
 
 -- Al inicio de keymaps.lua
 -- Detectar plataforma

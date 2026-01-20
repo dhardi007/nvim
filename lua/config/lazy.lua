@@ -1,20 +1,5 @@
 -- CONFIGURAR IA EN LA LINEA: 30
 -- 💸💳💰 DONDE ESTA CHATGPT? COMO IA ES TREMENDA.. PERO NO ES GRATIS PARA INTEGRARLO EN NVIM DIRECTAMENTE. Al igual que Avante [avane/cursor es mejor]
---
--- PARA QUE FUNCIONE DEBES DE ELIMINAR CMP.lua
---
--- PARA ACTIVAR CIERTAS IAS NECESITAS MODIFICAR CIERTOS ARCHIVOS
--- Entre ellos:
---   - plugins/init.lua
---   - plugins/disabled.lua
---   - .config/lazy.lua
--- Y LOS RESPECTOS ARCHIVOS DE CONFIGURACION dE IA [copilot, claude-code.lua etc]
---   - .config/nvim/lua/plugins/copilot.lua [opcional usa copilot-chat.lua]
---   - .config/nvim/lua/plugins/supermaven.lua {etc..}
---
--- OBVIAMENTE REVISA LOS KEYMAPS: config/keymaps.lua--
---- 🔧 CONFIGURACIÓN UNIFICADA: lazy.lua para WSL + Arch Linux
--- Detecta automáticamente el entorno y aplica configuraciones específicas
 
 -- ========================================
 -- 📍 DETECCIÓN DE PLATAFORMA
@@ -80,7 +65,7 @@ require("lazy").setup({
     -- Editor plugins
     { import = "lazyvim.plugins.extras.editor.harpoon2" },
     { import = "lazyvim.plugins.extras.editor.mini-files" },
-    -- { import = "lazyvim.plugins.extras.editor.snacks_explorer" },
+    { import = "lazyvim.plugins.extras.editor.snacks_explorer" },
     { import = "lazyvim.plugins.extras.editor.snacks_picker" },
 
     -- Debgugging plugins
@@ -109,7 +94,7 @@ require("lazy").setup({
     -- { import = "lazyvim.plugins.extras.ai.copilot-chat" },
     -- 💡 Si querés usar Avante o Claude Code, desactivá copilot-chat arriba
     { import = "lazyvim.plugins.extras.ai.copilot" },
-
+    --
     -- Import/override with your plugins
     { import = "plugins" },
   },

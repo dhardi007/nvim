@@ -1,3 +1,4 @@
+-- /012 󰢱  overrides.lua
 -- This file contains the configuration overrides for specific Neovim plugins.
 
 return {

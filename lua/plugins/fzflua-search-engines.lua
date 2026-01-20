@@ -38,7 +38,7 @@ return {
       { "<leader>f:", "<cmd>FzfLua command_history<cr>", desc = " 🔍 [FZF] History" },
 
       -- 📁 EXTRAS
-      { "<leader>fS", "<cmd>FzfLua tags<cr>", desc = " 🔍 [FZF] Tags" },
+      -- { "<leader>fS", "<cmd>FzfLua tags<cr>", desc = " 🔍 [FZF] Tags" },
       {
         "<leader>fc",
         function()

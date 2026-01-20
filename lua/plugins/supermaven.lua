@@ -1,23 +1,5 @@
--- Archivo: .config/nvim/lua/plugins/supermaven.lua
--- ✍️ Activar con:
--- SupermavenUseFree
--- Te logeas y wala! puedes usar el autocompletado! [por un mes xd]
-
--- 🐐🗣️🔥️✍️ NO REQUIERE API: es completamente gratis
+-- 🐐🗣️🔥️✍️ NO REQUIERE API: es completamente gratis -- ✍️ Activar con:SupermavenUseFree | AUTOCOMPLETADO 󰄭 .
 --
--- PARA QUE FUNCIONE DEBES DE ELIMINAR CMP.lua
---
--- PARA ACTIVAR CIERTAS IAS NECESITAS MODIFICAR CIERTOS ARCHIVOS
--- Entre ellos:
---   - plugins/init.lua
---   - plugins/disabled.lua
---   - .config/lazy.lua
--- Y LOS RESPECTOS ARCHIVOS DE CONFIGURACION dE IA [copilot, claude-code.lua etc]
---   - .config/nvim/lua/plugins/copilot.lua [opcional usa copilot-chat.lua]
---   - .config/nvim/lua/plugins/supermaven.lua {etc..}
---
--- OBVIAMENTE REVISA LOS KEYMAPS: config/keymaps.lua--
--- ACTIVAS SUPERMAVEn FREE CON: :SupermavenUseFree
 return {
   "supermaven-inc/supermaven-nvim", -- ¡IMPORTANTE! Nuevo repositorio
   config = function()

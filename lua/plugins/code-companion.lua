@@ -27,8 +27,8 @@ return {
       mode = { "n", "v" },
       desc = "  AI Toggle [C]hat [Companion]",
     },
-    { "<leader>an", "<cmd>CodeCompanionChat<cr>", mode = { "n", "v" }, desc = "  AI [N]ew Chat [Companion]" },
-    { "<leader>aa", "<cmd>CodeCompanionActions<cr>", mode = { "n", "v" }, desc = "  AI [A]ction [Companion]" },
+    { "<leader>aN", "<cmd>CodeCompanionChat<cr>", mode = { "n", "v" }, desc = "  AI [N]ew Chat [Companion]" },
+    { "<leader>aA", "<cmd>CodeCompanionActions<cr>", mode = { "n", "v" }, desc = "  AI [A]ction [Companion]" },
     { "ga", "<cmd>CodeCompanionChat Add<CR>", mode = { "v" }, desc = "  AI [A]dd to Chat [Companion]" },
     -- prompts
     { "<leader>ae", "<cmd>CodeCompanion /explain<cr>", mode = { "v" }, desc = "  AI [E]xplain [Companion]" },
@@ -80,6 +80,7 @@ return {
     },
     strategies = {
       inline = {
+        adapter = "ollama", -- ← FUERZA OLLAMA TAMBIÉN AQUÍ
         keymaps = {
           accept_change = {
             modes = { n = "ga" },
@@ -93,6 +94,7 @@ return {
       },
       chat = {
         -- ¡AGREGA ESTA LÍNEA!
+        adapter = "ollama", -- ← FUERZA OLLAMA
         tool_group = "gentleman", -- Activa el grupo gentleman por defecto
 
         slash_commands = {
@@ -123,7 +125,6 @@ return {
           },
           -- Add further custom keymaps here
         },
-        adapter = "copilot",
         roles = {
           ---The header name for the LLM's messages
           ---@type string|fun(adapter: CodeCompanion.Adapter): string

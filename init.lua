@@ -1,4 +1,6 @@
 -- ~/.config/nvim/init.lua
+-- Separo las IAS por N para acciones específicas
+
 -- para que no guarde todo el texto/ moleste con el Space + Q + Q
 vim.opt.shada = "!,'100,<50,s10,h" -- Config minimalista
 
@@ -27,6 +29,9 @@ if vim.g.scode then
   vim.cmd("nmap <leader>s :w<cr>")
   vim.cmd("nmap <leader>co :e ~/.config/nvim/init.lua<cr>")
 
+  -- Luego cargar lazy
+  require("config.lazy")
+
   -- Carga de Lazy.nvim (solo plugins compatibles con VSCode)
   local lazypath = vim.fn.stdpath("data") .. "/lazy/lazy.nvim"
   if not vim.loop.fs_stat(lazypath) then
@@ -46,7 +51,6 @@ if vim.g.scode then
     { "mini.ai" },
     { "smear-cursor.nvim" },
     { "nvim-treesitter", enabled = false },
-    -- ... otros plugins deshabilitados
   })
 
   -- Mapeos específicos de VSCode
@@ -101,7 +105,7 @@ if is_windows then
   vim.opt.shellxquote = ""
 
   -- Auto-pywal para Windows
-  require("config.Windows-pywal-wiwalAuto").setup()
+  require("utils.Windows-pywal-wiwalAuto").setup() -- Auto-pywal para Windows 
 elseif is_unix then
   -- Configuración Linux/macOS
   vim.g.node_host_prog = vim.fn.exepath("node") -- toma el node del PATH
@@ -109,13 +113,25 @@ elseif is_unix then
 end
 
 -- bootstrap lazy.nvim, LazyVim and your plugins
-require("config.lazy")
-require("config.keymaps")
-require("config.keymaps.ollama-keys") -- keymaps para LocalAI [Ollama]
-require("config.keymaps.gemini-keys") -- keymaps para Gemini AI
-require("config.keymaps.give-context") -- keymaps para utilidades IA
-require("config.keymaps.close-buffers") -- keymaps para manipular buffers
-require("config.keymaps.open-explorer") -- keymaps para Abrir Explorer/CopyPaste
+-- Requieres esenciales
+require("config.lazy") --  .
+require("config.keymaps") --  .
+
+-- Requiere de Keymaps
+require("config.keymaps.ollama-keys") -- keymaps para LocalAI [Ollama] 󰎣 🅾️ .
+require("config.keymaps.gemini-keys") -- keymaps para Gemini AI 󰊭 .
+require("config.keymaps.give-context") -- keymaps para utilidades IA  󰭹
+require("config.keymaps.close-buffers") -- keymaps para manipular buffers  .
+require("config.keymaps.open-explorer") -- keymaps para Abrir Explorer/CopyPaste  .
+require("config.keymaps.fix-backspace") -- keymaps para arreglar backspace en terminales 󰌌 .
+
+-- Requires de configuración
+require("utils.api-keys-loader") -- Cargador automático de API Keys 🔐 .
+require("utils.plugin-switcher") -- Cargador automático de Plugins en disabled.lua  .
+require("config.options") --  .
+require("config.autocmds") --  .
+require("config.nodejs") -- Configuracion de NodeJS para Neovim  .
+
 -- Resumen pochenkro de keymaps: keymapds.md    
 
 -- # PARA HACER FUNCIONAR GENTLEMAN AIS
@@ -155,3 +171,50 @@ end
 -- bootstrap lazy.nvim, LazyVim and your plugins
 vim.opt.timeoutlen = 1000
 vim.opt.ttimeoutlen = 0
+
+-- IA n3 - 1.0:  Avante con Ollama Permanente Forzar Cloud  .
+vim.api.nvim_create_autocmd("User", {
+  pattern = "LazyLoad",
+  callback = function(event)
+    if event.data == "avante.nvim" then
+      -- Espera un momento a que Avante cargue completamente
+      vim.defer_fn(function()
+        vim.cmd("silent! AvanteSwitchProvider ollama")
+      end, 100)
+    end
+  end,
+})
+-- IA n4 - 2.0:  Avante 🔕 Silenciar notificaciones molestas de Avante
+
+-- 🔇 Override notify para filtrar más agresivamente
+local original_notify = vim.notify
+vim.notify = function(msg, level, opts)
+  if type(msg) == "string" then
+    if
+      msg:match("Switch to provider")
+      or msg:match("Using previously selected model")
+      or msg:match("Ollama")
+      or msg:match("ollama")
+      or msg:match("Switched to provider") -- Esta es la que probablemente sale
+      or msg:match("Avante") and msg:match("failed")
+    then
+      return
+    end
+  end
+
+  original_notify(msg, level, opts)
+end
+
+-- IA n5 - 3.0: Plugin Switcher (toggle Avante, Copilot, etc)
+vim.keymap.set("n", "<leader>aP", function()
+  require("utils.plugin-switcher").interactive_toggle()
+end, { desc = "🔌 Toggle Plugins (Avante/Copilot/etc)" })
+
+-- Shortcuts directos
+vim.keymap.set("n", "<leader>aTA", function()
+  require("utils.plugin-switcher").toggle_plugin("avante")
+end, { desc = " Toggle Avante" })
+
+vim.keymap.set("n", "<leader>aTC", function()
+  require("utils.plugin-switcher").toggle_plugin("copilot")
+end, { desc = " Toggle Copilot" })

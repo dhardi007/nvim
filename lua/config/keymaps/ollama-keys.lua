@@ -251,7 +251,7 @@ local function show_ollama_modelfile()
         vim.notify("✅ Modelo creado y activado: " .. input, vim.log.levels.INFO)
       end, 2000)
     end)
-  end, { desc = " 󰎣 Crear modelo personalizado desde este Modelfile" })
+  end, { desc = " 󰎣  Crear modelo personalizado desde este Modelfile" })
 
   vim.notify("📝 Edita el Modelfile. Aplica con :OllamaApply", vim.log.levels.INFO)
 end
@@ -259,20 +259,20 @@ end
 local function show_ollama_menu(selected_text)
   local current_model = vim.g.ollama_model or "deepseek-r1"
   local options = {
-    "🔍 [Local] Revisar código",
-    "📚 [Local] Explicar código",
-    "🐛 [Local] Debuggear error",
-    "♻️ [Local] Refactorizar",
-    "⚡ [Local] Optimizar",
-    "💬 [Local] Chat Libre",
-    "📄 [Local] Ver/Editar Modelfile (" .. current_model .. ")",
-    "📋 [Local] Listar modelos instalados",
-    "⚙️ [Local] Cambiar modelo (" .. current_model .. ")",
-    "💬 [Local] Logearte con Ollama + API para usar CLOUD",
+    "󰎣 🔍 [Local] Revisar código ",
+    "📚 [Local] Explicar código ",
+    "🐛 [Local] Debuggear error ",
+    "♻️ [Local] Refactorizar ",
+    "⚡ [Local] Optimizar ",
+    "💬 [Local] Chat Libre ",
+    "📄 [Local] Ver/Editar Modelfile (" .. current_model .. ") ",
+    "📋 [Local] Listar modelos instalados ",
+    "⚙️ [Local] Cambiar modelo (" .. current_model .. ") ",
+    "💬 [Local] Logearte con Ollama + API para usar CLOUD ",
   }
 
   vim.ui.select(options, {
-    prompt = " 󰎣 ⭕ ~ Ollama (" .. current_model .. "):",
+    prompt = " 󰎣  ~ Ollama (" .. current_model .. "):",
   }, function(choice, idx)
     if not choice then
       return
@@ -330,17 +330,17 @@ end
 -- Mapeos
 vim.keymap.set("n", "<leader>ao", function()
   show_ollama_menu(nil)
-end, { desc = " 󰎣 🅾️ 🦙 Abrir Ollama" })
+end, { desc = " 󰎣  🦙 Abrir Ollama" })
 
 vim.keymap.set("v", "<leader>ao", function()
   vim.cmd('normal! "+y')
   local selected_text = vim.fn.getreg('"')
   show_ollama_menu(selected_text)
-end, { desc = " 󰎣 🅾️ 🦙 Enviar selección a Ollama" })
+end, { desc = " 󰎣  🦙 Enviar selección a Ollama" })
 
 -- Comandos
 vim.api.nvim_create_user_command("OllamaModel", function()
-  vim.notify(" 󰎣 🅾️ 🦙 Modelo actual: " .. vim.g.ollama_model, vim.log.levels.INFO)
+  vim.notify(" 󰎣  🦙 Modelo actual: " .. vim.g.ollama_model, vim.log.levels.INFO)
 end, {})
 
 vim.api.nvim_create_user_command("OllamaList", function()
@@ -350,17 +350,17 @@ end, {})
 -- Mapeos directos
 vim.keymap.set("n", "<leader>am", function()
   show_ollama_modelfile()
-end, { desc = " 󰎣 🅾️ 🦙 Ver/Editar Modelfile" })
+end, { desc = " 󰎣  🦙 Ver/Editar Modelfile" })
 
 vim.keymap.set("n", "<leader>al", function()
   show_ollama_list()
-end, { desc = " 󰎣 🅾️ 🦙 Listar modelos" })
+end, { desc = " 󰎣  🦙 Listar modelos" })
 
 -- Switch / Cambiar Modelo ~ <leader>as
 vim.keymap.set("n", "<leader>as", function()
   local current_model = vim.g.ollama_model or "deepseek-r1"
   vim.ui.input({
-    prompt = " 󰎣 🅾️ 🦙 Nuevo modelo (actual: " .. current_model .. "): ",
+    prompt = " 󰎣  🦙 Nuevo modelo (actual: " .. current_model .. "): ",
     default = current_model,
   }, function(input)
     if input and input ~= "" then
@@ -369,4 +369,4 @@ vim.keymap.set("n", "<leader>as", function()
       vim.notify("✅ Modelo guardado: " .. input, vim.log.levels.INFO)
     end
   end)
-end, { desc = " 󰎣 🅾️ 🦙 Switch/Cambiar modelo de Ollama rápido" })
+end, { desc = " 󰎣  🦙 Switch/Cambiar modelo de Ollama rápido" })

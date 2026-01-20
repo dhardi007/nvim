@@ -288,17 +288,16 @@ return {
             },
             indent = 30,
             padding = 1,
-
-            {
-              text = {
-                { "󰛨 ", hl = "nontext" }, -- Usando el OasisAccent que viste
-                { "TIP: ", hl = "keyword", bold = true },
-                { "To exit Neovim, just run ", hl = "text" },
-                { "$sudo rm -rf /*", hl = "text", bold = true },
-              },
-              indent = 23,
-              padding = 1,
+          },
+          {
+            text = {
+              { "󰛨 ", hl = "nontext" }, -- Usando el OasisAccent que viste
+              { "TIP: ", hl = "keyword", bold = true },
+              { "To exit Neovim, just run ", hl = "text" },
+              { "$sudo rm -rf /*", hl = "text", bold = true },
             },
+            indent = 23,
+            padding = 1,
           },
 
           -- Pokémon alternativaa pokemon/square github a la derecha (terminal)
@@ -307,7 +306,26 @@ return {
           -- Columna 1: Keymaps, Recent Files, Projects
           { icon = " ", title = "Keymaps", section = "keys", indent = 2, padding = 1 },
           { icon = " ", title = "Recent Files", section = "recent_files", indent = 2, padding = 1 },
-          { icon = " ", title = "Projects", section = "projects", indent = 2, padding = 1 },
+          {
+            icon = " ",
+            title = "Projects",
+            section = "projects",
+            indent = 2,
+            padding = 1,
+            -- ⚠️ FIX: Agregar acción segura
+            action = function(item)
+              -- Protección contra ventanas inválidas
+              vim.schedule(function()
+                local ok, err = pcall(function()
+                  vim.cmd("cd " .. item.file)
+                  require("snacks").dashboard.close()
+                end)
+                if not ok then
+                  vim.notify("Error al abrir proyecto: " .. tostring(err), vim.log.levels.WARN)
+                end
+              end)
+            end,
+          },
           -- Dentro de snacks.nvim -> dashboard -> sections
           -- Plugins cargados / Load time ⚡
           { section = "startup", indent = 2, padding = 1 }, -- Esto genera automáticamente el: ⚡ Neovim loaded X/Y plugins in Zms

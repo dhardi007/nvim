@@ -1,194 +1,106 @@
--- 🐐🗣️🔥️✍️ NO REQUIERE API: Opencode alternativa a copilot chat, o incluso puede interactuar con copilot chat
--- 🚨🚨INESTABLE!!! NO FUNCIONA BIEN.🚨🚨--
--- PARA QUE FUNCIONE DEBES DE ELIMINAR CMP.lua
---
--- PARA ACTIVAR CIERTAS IAS NECESITAS MODIFICAR CIERTOS ARCHIVOS
--- Entre ellos:
---   - plugins/init.lua
---   - plugins/disabled.lua
---   - .config/lazy.lua
--- Y LOS RESPECTOS ARCHIVOS DE CONFIGURACION dE IA [copilot, claude-code.lua etc]
---   - .config/nvim/lua/plugins/copilot.lua [opcional usa copilot-chat.lua]
---   - .config/nvim/lua/plugins/supermaven.lua {etc..}
---
--- OBVIAMENTE REVISA LOS KEYMAPS: config/keymaps.lua--
+-- 🐐🗣️🔥️✍️ NO REQUIERE API: Opencode alternativa a copilot chat
 return {
   "sudo-tee/opencode.nvim",
+  name = "opencode-sudo", -- ← IMPORTANTE: nombre único
   config = function()
-    -- Track opencode's internal state during resize
-    local in_resize = false
-    local original_cursor_win = nil
-    local opencode_filetypes = { "opencode_input", "opencode_output", "opencode_chat" }
-
-    -- Temporarily move cursor away from opencode during resize
-    local function temporarily_leave_opencode()
-      local is_opencode, opencode_win
-      if is_opencode and not in_resize then
-        in_resize = true
-        original_cursor_win = opencode_win
-
-        -- Find a non-opencode window to switch to
-        local target_win = nil
-        for _, win in ipairs(vim.api.nvim_list_wins()) do
-          local buf = vim.api.nvim_win_get_buf(win)
-          local ft = vim.bo[buf].filetype
-
-          local is_opencode_ft = false
-          for _, oft in ipairs(opencode_filetypes) do
-            if ft == oft then
-              is_opencode_ft = true
-              break
-            end
-          end
-
-          if not is_opencode_ft and vim.api.nvim_win_is_valid(win) then
-            target_win = win
-            break
-          end
-        end
-
-        -- Switch to non-opencode window if found
-        if target_win then
-          vim.api.nvim_set_current_win(target_win)
-          return true
-        end
-      end
-      return false
-    end
-
-    -- Restore cursor to original opencode window
-    local function restore_cursor_to_opencode()
-      if in_resize and original_cursor_win and vim.api.nvim_win_is_valid(original_cursor_win) then
-        -- Small delay to ensure resize is complete
-        vim.defer_fn(function()
-          pcall(vim.api.nvim_set_current_win, original_cursor_win)
-          in_resize = false
-          original_cursor_win = nil
-        end, 50)
-      end
-    end
-
-    -- Prevent duplicate windows cleanup
-    local function cleanup_duplicate_opencode_windows()
-      local seen_filetypes = {}
-      local windows_to_close = {}
-
-      for _, win in ipairs(vim.api.nvim_list_wins()) do
-        local buf = vim.api.nvim_win_get_buf(win)
-        local ft = vim.bo[buf].filetype
-
-        -- Special handling for opencode panels
-        for _, opencode_ft in ipairs(opencode_filetypes) do
-          if ft == opencode_ft then
-            if seen_filetypes[ft] then
-              -- Found duplicate, mark for closing
-              table.insert(windows_to_close, win)
-            else
-              seen_filetypes[ft] = win
-            end
-            break
-          end
-        end
-      end
-
-      -- Close duplicate windows
-      for _, win in ipairs(windows_to_close) do
-        if vim.api.nvim_win_is_valid(win) then
-          pcall(vim.api.nvim_win_close, win, true)
-        end
-      end
-    end
-
-    -- Create autocmd group for resize fix
-    vim.api.nvim_create_augroup("OpencodeResizeFix", { clear = true })
-
-    -- Main resize handler for Resize
-    vim.api.nvim_create_autocmd({ "VimResized" }, {
-      group = "OpencodeResizeFix",
-      callback = function()
-        -- Move cursor away from opencode before resize processing
-        local moved = temporarily_leave_opencode()
-
-        if moved then
-          -- Let resize happen, then restore cursor
-          vim.defer_fn(function()
-            restore_cursor_to_opencode()
-            -- Force a clean redraw
-            vim.cmd("redraw!")
-          end, 100)
-        end
-
-        -- Cleanup duplicates after resize completes
-        vim.defer_fn(cleanup_duplicate_opencode_windows, 150)
-      end,
-    })
-
-    -- Prevent opencode from responding to scroll/resize events during resize
-    vim.api.nvim_create_autocmd({ "WinScrolled", "WinResized" }, {
-      group = "OpencodeResizeFix",
-      pattern = "*",
-      callback = function(args)
-        local buf = args.buf
-        if buf and vim.api.nvim_buf_is_valid(buf) then
-          local ft = vim.bo[buf].filetype
-
-          for _, opencode_ft in ipairs(opencode_filetypes) do
-            if ft == opencode_ft then
-              -- Prevent event propagation for opencode buffers during resize
-              if in_resize then
-                return true -- This should stop the event
-              end
-              break
-            end
-          end
-        end
-      end,
-    })
-
-    -- Additional cleanup on focus events
-    vim.api.nvim_create_autocmd("FocusGained", {
-      group = "OpencodeResizeFix",
-      callback = function()
-        -- Reset resize state on focus gain
-        in_resize = false
-        original_cursor_win = nil
-        -- Clean up any duplicate windows
-        vim.defer_fn(cleanup_duplicate_opencode_windows, 100)
-      end,
-    })
-
     require("opencode").setup({
+      default_mode = "build",
+      opencode_executable = "opencode",
+
       keymap = {
-        global = {
-          toggle = "<leader>aa", -- Open opencode. Close if opened
-          open_input = "<leader>ai", -- Opens and focuses on input window on insert mode
-          open_input_new_session = "<leader>aI", -- Opens and focuses on input window on insert mode. Creates a new session
-          open_output = "<leader>ao", -- Opens and focuses on output window
-          toggle_focus = "<leader>at", -- Toggle focus between opencode and last window
-          close = "<leader>aq", -- Close UI windows
-          toggle_fullscreen = "<leader>af", -- Toggle between normal and fullscreen mode
-          select_session = "<leader>as", -- Select and load a opencode session
-          configure_provider = "<leader>ap", -- Quick provider and model switch from predefined list
-          diff_open = "<leader>ad", -- Opens a diff tab of a modified file since the last opencode prompt
-          diff_next = "<leader>a]", -- Navigate to next file diff
-          diff_prev = "<leader>a[", -- Navigate to previous file diff
-          diff_close = "<leader>ac", -- Close diff view tab and return to normal editing
-          diff_revert_all_last_prompt = "<leader>ara", -- Revert all file changes since the last opencode prompt
-          diff_revert_this_last_prompt = "<leader>art", -- Revert current file changes since the last opencode prompt
-          diff_revert_all = "<leader>arA", -- Revert all file changes since the last opencode session
-          diff_revert_this = "<leader>arT", -- Revert current file changes since the last opencode session
-          switch_position = "<leader>ax", -- Switch between positions
+        editor = {
+          -- Keymaps principales
+          ["<leader>og"] = { "toggle", desc = "󰮮 Toggle OpenCode" },
+          ["<leader>oi"] = { "open_input", desc = "󰮮 Open input window" },
+          ["<leader>oI"] = { "open_input_new_session", desc = "󰮮 Open input (new session)" },
+          ["<leader>oo"] = { "open_output", desc = "󰮮 Open output window" },
+          ["<leader>ot"] = { "toggle_focus", desc = "󰮮 Toggle focus OpenCode/Editor" },
+          ["<leader>oq"] = { "close", desc = "󰮮 Close UI windows" },
+          ["<leader>os"] = { "select_session", desc = "󰮮 Select session" },
+          ["<leader>oR"] = { "rename_session", desc = "󰮮 Rename session" },
+          ["<leader>op"] = { "configure_provider", desc = "󰮮 Configure provider/model" },
+          ["<leader>oz"] = { "toggle_zoom", desc = "󰮮 Toggle zoom" },
+          ["<leader>ov"] = { "paste_image", desc = "󰮮 Paste image" },
+
+          -- Keymaps para diffs
+          ["<leader>od"] = { "diff_open", desc = "󰮮 Open diff view" },
+          ["<leader>o]"] = { "diff_next", desc = "󰮮 Next file diff" },
+          ["<leader>o["] = { "diff_prev", desc = "󰮮 Previous file diff" },
+          ["<leader>oc"] = { "diff_close", desc = "󰮮 Close diff view" },
+          ["<leader>ora"] = { "diff_revert_all_last_prompt", desc = "󰮮 Revert all (last prompt)" },
+          ["<leader>ort"] = { "diff_revert_this_last_prompt", desc = "󰮮 Revert file (last prompt)" },
+          ["<leader>orA"] = { "diff_revert_all", desc = "󰮮 Revert all (session)" },
+          ["<leader>orT"] = { "diff_revert_this", desc = "󰮮 Revert file (session)" },
+          ["<leader>orr"] = { "diff_restore_snapshot_file", desc = "󰮮 Restore file to snapshot" },
+          ["<leader>orR"] = { "diff_restore_snapshot_all", desc = "󰮮 Restore all to snapshot" },
+
+          -- Otros keymaps útiles
+          ["<leader>ox"] = { "swap_position", desc = "󰮮 Swap pane position" },
+          ["<leader>oT"] = { "timeline", desc = "󰮮 Timeline picker" },
+          ["<leader>o/"] = { "quick_chat", mode = { "n", "x" }, desc = "󰮮 Quick chat" },
+          ["<leader>opa"] = { "permission_accept", desc = "󰮮 Accept permission (once)" },
+          ["<leader>opA"] = { "permission_accept_all", desc = "󰮮 Accept all permissions" },
+          ["<leader>opd"] = { "permission_deny", desc = "󰮮 Deny permission" },
+          ["<leader>ott"] = { "toggle_tool_output", desc = "󰮮 Toggle tool output" },
+          ["<leader>otr"] = { "toggle_reasoning_output", desc = "󰮮 Toggle reasoning output" },
+          ["<leader>oS"] = { "select_child_session", desc = "󰮮 Select child session" },
         },
-      },
-      ui = {
-        fullscreen = false, -- Start in fullscreen mode (default: false)
-        position = "left",
-        display_model = true, -- Display model name on top winbar
-        window_highlight = "Normal:OpencodeBackground,FloatBorder:OpencodeBorder", -- Highlight group for the opencode window
-        output = {
-          tools = {
-            show_output = true, -- Show tools output [diffs, cmd output, etc.] (default: true)
+
+        input_window = {
+          ["<cr>"] = { "submit_input_prompt", mode = { "n", "i" }, desc = "󰮮 Submit prompt" },
+          ["<esc>"] = { "close", desc = "󰮮 Close OpenCode" },
+          ["<C-c>"] = { "cancel", desc = "󰮮 Cancel request" },
+          ["~"] = { "mention_file", mode = "i", desc = "󰮮 Mention file" },
+          ["@"] = { "mention", mode = "i", desc = "󰮮 Insert mention" },
+          ["/"] = { "slash_commands", mode = "i", desc = "󰮮 Slash commands" },
+          ["#"] = { "context_items", mode = "i", desc = "󰮮 Context items" },
+          ["<M-v>"] = { "paste_image", mode = "i", desc = "󰮮 Paste image" },
+          ["<C-i>"] = { "focus_input", mode = { "n", "i" }, desc = "󰮮 Focus input" },
+          ["<tab>"] = { "toggle_pane", mode = { "n", "i" }, desc = "󰮮 Toggle pane" },
+          ["<up>"] = { "prev_prompt_history", mode = { "n", "i" }, desc = "󰮮 Previous prompt" },
+          ["<down>"] = { "next_prompt_history", mode = { "n", "i" }, desc = "󰮮 Next prompt" },
+          ["<M-m>"] = { "switch_mode", desc = "󰮮 Switch mode (build/plan)" },
+        },
+
+        output_window = {
+          ["<esc>"] = { "close", desc = "󰮮 Close OpenCode" },
+          ["<C-c>"] = { "cancel", desc = "󰮮 Cancel request" },
+          ["]]"] = { "next_message", desc = "󰮮 Next message" },
+          ["[["] = { "prev_message", desc = "󰮮 Previous message" },
+          ["<tab>"] = { "toggle_pane", mode = { "n", "i" }, desc = "󰮮 Toggle pane" },
+          ["i"] = { "focus_input", mode = "n", desc = "󰮮 Focus input" },
+          ["<leader>oS"] = { "select_child_session", desc = "󰮮 Select child session" },
+          ["<leader>oD"] = { "debug_message", desc = "󰮮 Debug message" },
+          ["<leader>oO"] = { "debug_output", desc = "󰮮 Debug output" },
+          ["<leader>ods"] = { "debug_session", desc = "󰮮 Debug session" },
+        },
+
+        ui = {
+          position = "left",
+          display_model = true,
+          window_highlight = "Normal:OpencodeBackground,FloatBorder:OpencodeBorder",
+          output = {
+            tools = {
+              show_output = true,
+            },
           },
+        },
+
+        permission = {
+          accept = "a",
+          accept_all = "A",
+          deny = "d",
+        },
+
+        session_picker = {
+          rename_session = { "<C-r>" },
+          delete_session = { "<C-d>" },
+          new_session = { "<C-n>" },
+        },
+
+        timeline_picker = {
+          undo = { "<C-u>", mode = { "i", "n" } },
+          fork = { "<C-f>", mode = { "i", "n" } },
         },
       },
     })
@@ -198,10 +110,10 @@ return {
     {
       "MeanderingProgrammer/render-markdown.nvim",
       opts = {
-        anti_conceal = { enabled = false },
         file_types = { "markdown", "opencode_output" },
       },
-      ft = { "markdown", "Avante", "copilot-chat", "opencode_output" },
+      ft = { "markdown", "opencode_output" },
     },
+    "folke/snacks.nvim",
   },
 }

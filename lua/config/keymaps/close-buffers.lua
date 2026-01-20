@@ -1,8 +1,5 @@
 -- Extract from: keymaps.lua
--- Detectar plataforma
-local is_wsl = vim.fn.has("wsl") == 1
-local is_windows = vim.fn.has("win32") == 1 or vim.fn.has("win64") == 1
-local is_linux = vim.fn.has("unix") == 1 and not is_wsl
+-- config/keymaps/close-buffers.lua
 
 vim.g.mapleader = " "
 
@@ -11,12 +8,17 @@ local keymap = vim.keymap
 -- =============================
 -- CERRAR BUFFERS INTELIGENTE
 -- =============================
---🛑 🗿 Cerrar pestaña
+
+-- =============================
+-- CERRAR BUFFERS INTELIGENTE
+-- =============================
+--🛑 🗿 Cerrar pestaña Y buffer
 keymap.set("n", "<C-q>", function()
   local buftype = vim.bo.buftype
   local filetype = vim.bo.filetype
+  local bufnr = vim.api.nvim_get_current_buf()
 
-  -- Lista de ventanas especiales que deben cerrarse con :close
+  -- Lista de ventanas especiales
   local special_filetypes = {
     "neo-tree",
     "NvimTree",
@@ -26,57 +28,70 @@ keymap.set("n", "<C-q>", function()
     "terminal",
     "Avante",
     "AvanteInput",
+    "AvanteAsk",
+    "AvanteSelectedFiles",
     "copilot-chat",
+    "opencode_output",
+    "opencode_input",
   }
 
-  -- Verificar si es una ventana especial
+  -- Verificar si es ventana especial
   local is_special = vim.tbl_contains(special_filetypes, filetype) or buftype ~= ""
 
   if is_special then
-    -- Ventanas especiales: cierra la ventana
+    -- Cerrar ventana especial
     pcall(vim.cmd, "close")
+
+    -- Eliminar buffer después de cerrar
+    vim.defer_fn(function()
+      if vim.api.nvim_buf_is_valid(bufnr) and vim.api.nvim_buf_is_loaded(bufnr) then
+        pcall(function()
+          vim.api.nvim_buf_delete(bufnr, { force = true })
+        end)
+      end
+    end, 100)
     return
   end
 
-  -- Contar buffers normales listados
+  -- Para buffers normales
   local buffers = vim.fn.getbufinfo({ buflisted = 1 })
   local normal_buffers = vim.tbl_filter(function(buf)
     return vim.fn.getbufvar(buf.bufnr, "&buftype") == ""
   end, buffers)
 
   if #normal_buffers > 1 then
-    -- Hay otros buffers: cierra este con bdelete!
     vim.cmd("bdelete!")
   else
-    -- Es el último buffer normal: cierra Neovim
     vim.cmd("quit!")
   end
 end, {
   noremap = true,
   silent = true,
-  desc = "Cerrar buffer/ventana inteligente",
+  desc = "🛑 Cerrar split Y borrar buffer",
 })
---
+
+-- =============================
+-- CERRAR SOLO BUFFER (nuevo atajo)
+-- =============================
+keymap.set("n", "<leader>bw", ":bdelete<CR>", {
+  desc = "Cerrar buffer actual",
+})
+
 -- =============================
 -- OCULTAR/MOSTRAR BUFFERS
 -- =============================
-
--- Ocultar buffer actual (sin cerrarlo)
 keymap.set("n", "<leader>bh", ":hide<CR>", {
   desc = "Ocultar buffer (mantener en memoria)",
 })
 
--- Mostrar lista de buffers ocultos
 keymap.set("n", "<leader>ba", ":ls!<CR>", {
   desc = "All - Listar todos los buffers (incluyendo ocultos)",
 })
 
--- Cambiar a buffer específico (incluso si está oculto)
 keymap.set("n", "<leader>bz", ":buffers<CR>:buffer<Space>", {
   desc = "Zxy - Cambiar a buffer por número",
 })
 
--- Cerrar buffer ACTUAL pero mantener ventana (usando enew)
 keymap.set("n", "<leader>bc", ":enew | bdelete #<CR>", {
   desc = "Cerrar buffer pero mantener ventana",
 })

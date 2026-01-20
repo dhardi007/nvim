@@ -58,7 +58,7 @@ local function build_claude_context(selected_text, custom_instruction)
     context = context .. "🌿 Branch: " .. repo.branch .. "\n"
   end
 
-  context = context .. "📄 Archivo: " .. repo.relative_path .. "\n"
+  context = context .. "📄 Archivo ($HOME(): " .. repo.relative_path .. "\n"
   context = context .. "🔤 Tipo: " .. (file_type ~= "" and file_type or "text") .. "\n"
   context = context .. "📍 Línea: " .. line_num .. "\n"
   context = context .. "💻 Sistema: " .. (vim.fn.has("wsl") == 1 and "WSL" or vim.loop.os_uname().sysname) .. "\n\n"
@@ -84,7 +84,7 @@ vim.keymap.set("n", "<leader>ay", function()
 
   vim.fn.setreg("+", context)
   vim.notify("📋 Archivo completo + contexto copiado\n📁 " .. repo.name, vim.log.levels.INFO)
-end, { desc = "  📋 Copiar archivo completo con contexto" })
+end, { desc = "   Copiar archivo completo con contexto" })
 
 -- Atajo ultra-rápido: Solo copiar código seleccionado (sin abrir navegador)
 vim.keymap.set("v", "<leader>ay", function()
@@ -94,7 +94,7 @@ vim.keymap.set("v", "<leader>ay", function()
 
   vim.fn.setreg("+", context)
   vim.notify("✅ Código + contexto copiado al portapapeles", vim.log.levels.INFO)
-end, { desc = "  📋 Copiar selección con contexto (sin abrir)" })
+end, { desc = "   Copiar selección con contexto (sin abrir)" })
 
 -- Comando para ver información del repositorio actual
 vim.api.nvim_create_user_command("ClaudeInfo", function()

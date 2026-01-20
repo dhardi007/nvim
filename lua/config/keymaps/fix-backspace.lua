@@ -78,7 +78,7 @@ for _, ft in ipairs(snack_filetypes) do
       vim.bo.modifiable = true
 
       -- Mapear Ctrl+Backspace y Ctrl+H
-      vim.keymap.set("i", "<C-BS>", delete_previous_word, {
+      vim.keymap.set("t", "<C-BS>", delete_previous_word, {
         buffer = true,
         noremap = true,
         silent = true,

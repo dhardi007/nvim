@@ -20,6 +20,7 @@ function M.setup()
     -- Ejecutar WalManager en PowerShell (oculto)
     vim.cmd([[!start /B pwsh -NonInteractive -WindowStyle Hidden -Command "uwal -y"]])
     -- vim.notify("🎨 Actualizando colores (Windows PowerShell)", vim.log.levels.INFO)
+    -- Aca abajo se debe triggear el elif unix (linux) DE API KEYS: ubicado en: $HOME/.api-keys.sh
   end
 
   -- ================================================
@@ -96,7 +97,6 @@ function M.setup()
       print("🔧 Comando: wal -i [wallpaper_de_windows]")
     end
   end, { desc = "Mostrar info de Pywal Auto" })
-
 end
 
 return M

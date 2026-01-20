@@ -9,7 +9,8 @@ return {
 
   keys = {
     { "-", "<CMD>Oil<CR>", desc = "Open Oil (parent dir)" },
-    { "<leader>E", "<CMD>Oil --float<CR>", desc = "Open Oil (floating)" },
+    { "<leader>e", "<CMD>Oil --float<CR>", desc = "Open Oil (floating)" },
+    -- Trucazo, si abres Space + E, [Snacks] y luego > Space + e [oil] entras a oil en la carpeta CWD de snacks. Cosa contraria si hago Space + e que abre desde el Root del archivo actual
   },
 
   opts = {
