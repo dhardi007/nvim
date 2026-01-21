@@ -15,6 +15,17 @@ return {
     end
     -- 1. Configuración principal de Codeium
     require("codeium").setup({
+      -- 🔇 SILENCIAR ERRORES DE CONEXIÓN
+      on_attach = function(client, bufnr)
+        -- Silenciar todos los logs de error
+        client.config.flags = client.config.flags or {}
+        client.config.flags.allow_incremental_sync = true
+      end,
+
+      -- Configurar handlers para ignorar errores
+      handlers = {
+        ["textDocument/publishDiagnostics"] = function() end, -- Silenciar diagnósticos
+      },
       enable_chat = true,
       enable_cmp_source = true,
       detect_proxy = true,
