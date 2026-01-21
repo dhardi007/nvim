@@ -92,9 +92,9 @@ local PLUGINS_CONFIG = {
   },
 
   markdown = {
-    name = "Markdown Preview",
+    name = "Markdown View",
     icon = "",
-    file = "markdown-preview.lua",
+    file = "markview.lua",
     category = "UI",
   },
 
