@@ -1,7 +1,7 @@
 return {
   {
     "andweeb/presence.nvim",
-    lazy = false,
+    lazy = true,
     config = function()
       require("plugins.presence"):setup({
         auto_update = true, -- Actualiza automáticamente tu estado

@@ -16,7 +16,23 @@ return {
         require("opencode").toggle()
       end,
       mode = { "n" },
-      desc = " 󰮮 Toggle OpenCode",
+      desc = " 󰮮 Toggle OpenCode [Cli]",
+    },
+    {
+      "<leader>aA",
+      function()
+        require("opencode").toggle()
+      end,
+      mode = { "n" },
+      desc = " 󰮮 Toggle OpenCode [Cli]",
+    },
+    {
+      "<leader>ao",
+      function()
+        require("opencode").toggle()
+      end,
+      mode = { "n" },
+      desc = " 󰮮 Toggle OpenCode [Cli]",
     },
     {
       "<leader>as",

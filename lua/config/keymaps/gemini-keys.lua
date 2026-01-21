@@ -33,12 +33,12 @@ end
 
 local function show_gemini_menu(selected_text)
   local options = {
-    "🔍 Revisar código",
-    "📚 Explicar código",
-    "🐛 Debuggear error",
-    "♻️ Refactorizar",
-    "⚡ Optimizar",
-    "💬 Personalizado [Abrir gemini]",
+    "   Revisar código",
+    "  󱜨 Explicar código",
+    "   Debuggear error",
+    "  󰈏 Refactorizar",
+    "  󰓅 Optimizar",
+    "   󱋑 Personalizado [Abrir gemini]",
   }
 
   vim.ui.select(options, {

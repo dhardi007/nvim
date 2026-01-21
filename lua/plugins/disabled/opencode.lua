@@ -4,13 +4,19 @@ return {
   name = "opencode-sudo", -- ← IMPORTANTE: nombre único
   config = function()
     require("opencode").setup({
+      server = {
+        url = "http://localhost:4096", -- Esta es la URL que necesitas
+        autostart = false, -- No intentar iniciar el servidor automáticamente
+      },
       default_mode = "build",
+      default_model = "ollama/deepseek-v3.1:671b", -- ← AGREGAR ESTA LÍNEA
       opencode_executable = "opencode",
 
       keymap = {
         editor = {
           -- Keymaps principales
-          ["<leader>og"] = { "toggle", desc = "󰮮 Toggle OpenCode" },
+          ["<leader>og"] = { "toggle", desc = "󰮮 Toggle OpenCode [Avante Like sudo-tee]" },
+          ["<leader>ao"] = { "toggle", desc = "󰮮 Toggle OpenCode [Avante Like sudo-tee]" },
           ["<leader>oi"] = { "open_input", desc = "󰮮 Open input window" },
           ["<leader>oI"] = { "open_input_new_session", desc = "󰮮 Open input (new session)" },
           ["<leader>oo"] = { "open_output", desc = "󰮮 Open output window" },
@@ -21,6 +27,7 @@ return {
           ["<leader>op"] = { "configure_provider", desc = "󰮮 Configure provider/model" },
           ["<leader>oz"] = { "toggle_zoom", desc = "󰮮 Toggle zoom" },
           ["<leader>ov"] = { "paste_image", desc = "󰮮 Paste image" },
+          ["<leader>aP"] = { "paste_image", desc = "󰮮 Paste image [Avante Like sudo-tee]" },
 
           -- Keymaps para diffs
           ["<leader>od"] = { "diff_open", desc = "󰮮 Open diff view" },
@@ -38,6 +45,55 @@ return {
           ["<leader>ox"] = { "swap_position", desc = "󰮮 Swap pane position" },
           ["<leader>oT"] = { "timeline", desc = "󰮮 Timeline picker" },
           ["<leader>o/"] = { "quick_chat", mode = { "n", "x" }, desc = "󰮮 Quick chat" },
+          ["<leader>aq"] = { "quick_chat", mode = { "n", "x" }, desc = "󰮮 Quick chat [Avante Like sudo-tee]" },
+          -- OpenCode [Avante Like sudo-tee] PROMPTS PERSONALIZADOS:
+          ["<leader>a1"] = {
+            function()
+              vim.cmd(
+                'Opencode run "Revisar el código seleccionado y sugerir mejoras" model=ollama/deepseek-v3.1:671b'
+              )
+            end,
+            mode = { "n", "x" },
+            desc = "󰮮 Revisar código ◎",
+          },
+          ["<leader>a2"] = {
+            function()
+              vim.cmd('Opencode run "Explicar detalladamente qué hace este código" model=ollama/deepseek-v3.1:671b')
+            end,
+            mode = { "n", "x" },
+            desc = "󰮮 󱜨 Explicar código",
+          },
+          ["<leader>a3"] = {
+            function()
+              vim.cmd('Opencode run "Debuggear este error y proponer soluciones" model=ollama/deepseek-v3.1:671b')
+            end,
+            mode = { "n", "x" },
+            desc = "󰮮  Debuggear error ◎",
+          },
+          ["<leader>a4"] = {
+            function()
+              vim.cmd(
+                'Opencode run "Refactorizar este código para mejorar legibilidad y mantenibilidad" model=ollama/deepseek-v3.1:671b'
+              )
+            end,
+            mode = { "n", "x" },
+            desc = "󰮮 󰈏 Refactorizar ◎",
+          },
+          ["<leader>a5"] = {
+            function()
+              vim.cmd('Opencode run "Optimizar el rendimiento de este código" model=ollama/deepseek-v3.1:671b')
+            end,
+            mode = { "n", "x" },
+            desc = "󰮮 󰓅 Optimizar ◎",
+          },
+          ["<leader>a6"] = {
+            function()
+              vim.cmd('Opencode run "' .. vim.fn.input("󰮮 Custom prompt: ") .. '" model=ollama/deepseek-v3.1:671b')
+            end,
+            mode = { "n", "x" },
+            desc = "󰮮 Opencode Prompt [Avante Like sudo-tee]",
+          },
+
           ["<leader>opa"] = { "permission_accept", desc = "󰮮 Accept permission (once)" },
           ["<leader>opA"] = { "permission_accept_all", desc = "󰮮 Accept all permissions" },
           ["<leader>opd"] = { "permission_deny", desc = "󰮮 Deny permission" },

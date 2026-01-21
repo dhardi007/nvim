@@ -28,17 +28,24 @@ return {
     picker_path = "/mnt/c/Users/Diego/AppData/Local/nvim-data/oklch-color-picker/oklch-color-picker.exe",
   },
   config = function(_, opts)
+    -- ✅ DESHABILITAR en buffers de Avante
+    vim.api.nvim_create_autocmd("FileType", {
+      pattern = { "Avante", "AvanteInput", "AvanteAsk", "AvanteSelectedFiles" },
+      callback = function()
+        vim.b.oklch_color_picker_disable = true
+      end,
+    })
     -- Silenciar notificaciones durante la carga
-    local notify_backup = vim.notify
-    vim.notify = function(msg, level, notify_opts)
+    local original_notify = vim.notify
+    vim.notify = function(msg, level, opts)
       if type(msg) == "string" and msg:match("oklch") then
         return
       end
-      notify_backup(msg, level, notify_opts)
+      original_notify(msg, level, opts)
     end
 
     local ok, picker = pcall(require, "oklch-color-picker")
-    vim.notify = notify_backup
+    vim.notify = original_notify
 
     if ok then
       picker.setup(opts)

@@ -114,6 +114,8 @@ require("lazy").setup({
     rtp = {
       -- Disable some runtime path plugins to improve performance
       disabled_plugins = {
+        -- Para usar el de avante 
+        "markdown", -- Deshabilita el extra de markdown de LazyVim
         "gzip",
         -- "matchit",
         -- "matchparen",

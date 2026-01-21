@@ -1,5 +1,5 @@
 -- ~/.config/nvim/init.lua
--- Separo las IAS por N para acciones específicas
+-- Separo las FEATURE por N para acciones específicas
 
 -- para que no guarde todo el texto/ moleste con el Space + Q + Q
 vim.opt.shada = "!,'100,<50,s10,h" -- Config minimalista
@@ -126,7 +126,6 @@ require("config.keymaps.open-explorer") -- keymaps para Abrir Explorer/CopyPaste
 require("config.keymaps.fix-backspace") -- keymaps para arreglar backspace en terminales 󰌌 .
 
 -- Requires de configuración
-require("utils.api-keys-loader") -- Cargador automático de API Keys 🔐 .
 require("utils.plugin-switcher") -- Cargador automático de Plugins en disabled.lua  .
 require("config.options") --  .
 require("config.autocmds") --  .
@@ -172,7 +171,7 @@ end
 vim.opt.timeoutlen = 1000
 vim.opt.ttimeoutlen = 0
 
--- IA n3 - 1.0:  Avante con Ollama Permanente Forzar Cloud  .
+-- FEATURE: n1 - 1.0:  Avante con Ollama Permanente Forzar Cloud  .
 vim.api.nvim_create_autocmd("User", {
   pattern = "LazyLoad",
   callback = function(event)
@@ -184,37 +183,33 @@ vim.api.nvim_create_autocmd("User", {
     end
   end,
 })
--- IA n4 - 2.0:  Avante 🔕 Silenciar notificaciones molestas de Avante
+-- FEATURE: n2 [INESTABLE💀] - 2.0:  Avante 🔕 Silenciar notificaciones molestas de Avante
 
 -- 🔇 Override notify para filtrar más agresivamente
-local original_notify = vim.notify
-vim.notify = function(msg, level, opts)
-  if type(msg) == "string" then
-    if
-      msg:match("Switch to provider")
-      or msg:match("Using previously selected model")
-      or msg:match("Ollama")
-      or msg:match("ollama")
-      or msg:match("Switched to provider") -- Esta es la que probablemente sale
-      or msg:match("Avante") and msg:match("failed")
-    then
-      return
-    end
-  end
+-- local original_notify = vim.notify
+-- vim.notify = function(msg, level, opts)
+--   if type(msg) == "string" then
+--     if
+--       msg:match("Switch to provider")
+--       or msg:match("Using previously selected model")
+--       or msg:match("Ollama")
+--       or msg:match("ollama")
+--       or msg:match("Switched to provider") -- Esta es la que probablemente sale
+--       or msg:match("Avante") and msg:match("failed")
+--     then
+--       return
+--     end
+--   end
+--
+--   original_notify(msg, level, opts)
+-- end
 
-  original_notify(msg, level, opts)
-end
+-- FEATURE n3 - 3.0: Plugin Switcher (toggle Avante, Copilot, etc)
+vim.keymap.set("n", "<leader>aD", function()
+  require("utils.plugin-switcher").interactive_toggle()
+end, { desc = "🔌 Toggle Plugins (Opencode/Avante/Claude/etc)" })
 
 -- IA n5 - 3.0: Plugin Switcher (toggle Avante, Copilot, etc)
-vim.keymap.set("n", "<leader>aP", function()
+vim.keymap.set("n", "<leader>D", function()
   require("utils.plugin-switcher").interactive_toggle()
-end, { desc = "🔌 Toggle Plugins (Avante/Copilot/etc)" })
-
--- Shortcuts directos
-vim.keymap.set("n", "<leader>aTA", function()
-  require("utils.plugin-switcher").toggle_plugin("avante")
-end, { desc = " Toggle Avante" })
-
-vim.keymap.set("n", "<leader>aTC", function()
-  require("utils.plugin-switcher").toggle_plugin("copilot")
-end, { desc = " Toggle Copilot" })
+end, { desc = "🔌 Toggle Plugins (Opencode/Avante/Claude/etc)" })

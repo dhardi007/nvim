@@ -15,6 +15,18 @@ local PLUGINS_CONFIG = {
     file = "copilot-chat.lua",
     category = "AI Assistant",
   },
+  codecompanion = {
+    name = "CodeCompanion",
+    icon = "",
+    file = "code-companion.lua",
+    category = "AI Assistant",
+  },
+  gemini_cli = {
+    name = "Gemini CLI",
+    icon = "󰊭",
+    file = "gemini-cli.lua",
+    category = "AI Assistant",
+  },
 
   -- 🔮 AI Autocompletion
   copilot = {
@@ -25,25 +37,26 @@ local PLUGINS_CONFIG = {
   },
   supermaven = {
     name = "Supermaven",
-    icon = "",
+    icon = "",
+    icon = "󰓅",
     file = "supermaven.lua",
     category = "AI Completion",
   },
   tabnine = {
     name = "TabNine",
-    icon = "󰓅",
+    icon = "",
     file = "tabnine.lua",
     category = "AI Completion",
   },
   codeium = {
-    name = "Codeium-Windsurf",
-    icon = "",
+    name = "Codeium",
+    icon = "",
     file = "windsurf-codeium.lua",
     category = "AI Completion",
   },
 
   -- 🎮 OpenCode variants
-  opencode_sudo = {
+  opencode = {
     name = "OpenCode (sudo-tee)",
     icon = "󰮮",
     file = "opencode.lua",
@@ -55,33 +68,19 @@ local PLUGINS_CONFIG = {
     file = "opencode-chat.lua",
     category = "OpenCode",
   },
-  codecompanion = {
-    name = "CodeCompanion",
-    icon = "",
-    file = "codecompanion.lua",
-    category = "AI Assistant",
-  },
 
   -- 🌟 Claude variants
+  claude = {
+    name = "Claude Code",
+    icon = "",
+    file = "claude-code.lua",
+    category = "Claude",
+  },
   claude_old = {
     name = "Claude Code (old)",
     icon = "",
     file = "claude-code-old.lua",
     category = "Claude",
-  },
-  claude_new = {
-    name = "Claude Code (new)",
-    icon = "",
-    file = "claude-code.lua",
-    category = "Claude",
-  },
-
-  -- 💬 Other AI
-  gemini_cli = {
-    name = "Gemini CLI",
-    icon = "󰊭",
-    file = "gemini-cli.lua",
-    category = "AI Assistant",
   },
 
   -- 🎨 UI/UX
@@ -91,6 +90,14 @@ local PLUGINS_CONFIG = {
     file = "bufferline.lua",
     category = "UI",
   },
+
+  markdown = {
+    name = "Markdown Preview",
+    icon = "",
+    file = "markdown-preview.lua",
+    category = "UI",
+  },
+
   snacks = {
     name = "Snacks",
     icon = "",
@@ -118,13 +125,26 @@ local PLUGINS_CONFIG = {
     category = "Discord",
   },
   cord = {
-    name = "Cord (Discord)",
+    name = "Cord",
     icon = "󰙯",
     file = "cord.lua",
     category = "Discord",
   },
 
   -- 📝 Productivity
+  todo_comments = {
+    name = "Todo Comments",
+    icon = "",
+    file = "todo-comments.lua",
+    category = "Productivity",
+  },
+  mcphub = {
+    name = "MCPHUB",
+    icon = "",
+    file = "mcphub-nvim.lua",
+    category = "Productivity",
+  },
+
   obsidian = {
     name = "Obsidian",
     icon = "",
@@ -154,7 +174,7 @@ end
 local function move_plugin(plugin_key, to_disabled)
   local config = PLUGINS_CONFIG[plugin_key]
   if not config then
-    vim.notify("❌ Plugin desconocido: " .. plugin_key, vim.log.levels.ERROR)
+    vim.notify("󰜺 Plugin desconocido: " .. plugin_key, vim.log.levels.ERROR)
     return false
   end
 
@@ -167,7 +187,12 @@ local function move_plugin(plugin_key, to_disabled)
   -- Verificar que el archivo origen existe
   if vim.fn.filereadable(from_file) ~= 1 then
     vim.notify(
-      "⚠️  " .. config.icon .. " " .. config.name .. " ya está " .. (to_disabled and "desactivado" or "activado"),
+      "⚠️  "
+        .. config.icon
+        .. " "
+        .. config.name
+        .. " Manejado por disabled.lua ||o ya está "
+        .. (to_disabled and "Desactivado" or "activado"),
       vim.log.levels.WARN
     )
     return false
@@ -212,6 +237,8 @@ end
 -- UI interactiva MEJORADA con categorías
 function M.interactive_toggle()
   local choices = {}
+  local choices_map = {} -- Mapeo para encontrar el key correcto
+
   local categories = {}
 
   -- Agrupar por categoría
@@ -249,30 +276,29 @@ function M.interactive_toggle()
         return a.config.name < b.config.name
       end)
       for _, item in ipairs(plugins) do
-        local status = item.disabled and "❌" or "✅"
-        table.insert(
-          choices,
-          "  " .. status .. " " .. item.config.icon .. " " .. item.config.name .. " (" .. item.key .. ")"
-        )
+        local status = item.disabled and "🚫 |" or "󰗠  |"
+        local choice_text = "  " .. status .. " " .. item.config.icon .. " " .. item.config.name
+        table.insert(choices, choice_text)
+        choices_map[choice_text] = item.key -- Guardar mapeo
       end
     end
   end
 
   table.insert(choices, "─────────────────")
-  table.insert(choices, "🚫 Cancelar")
+  table.insert(choices, "❌ Cancelar")
 
   vim.ui.select(choices, {
-    prompt = "🔌 Toggle Plugin:",
+    prompt = "🔌 Toggle Plugin/Disable 󰯈 󰯇 :",
     format_item = function(item)
       return item
     end,
   }, function(choice)
-    if not choice or choice:match("🚫") or choice:match("^───") then
+    if not choice or choice:match("󰜺") or choice:match("^───") then
       return
     end
 
-    -- Extraer el key del plugin del texto entre paréntesis
-    local plugin_key = choice:match("%((.-)%)")
+    -- Obtener el key del mapeo
+    local plugin_key = choices_map[choice]
     if plugin_key then
       M.toggle_plugin(plugin_key)
     end
@@ -299,25 +325,29 @@ function M.toggle_by_category(category)
   end
 
   local choices = {}
+  local choices_map = {}
+
   table.sort(plugins, function(a, b)
     return a.config.name < b.config.name
   end)
 
   for _, item in ipairs(plugins) do
-    local status = item.disabled and "❌" or "✅"
-    table.insert(choices, status .. " " .. item.config.icon .. " " .. item.config.name .. " (" .. item.key .. ")")
+    local status = item.disabled and "🚫  |" or "󰗠  |"
+    local choice_text = status .. " " .. item.config.icon .. " " .. item.config.name
+    table.insert(choices, choice_text)
+    choices_map[choice_text] = item.key
   end
 
-  table.insert(choices, "🚫 Cancelar")
+  table.insert(choices, "󰜺 Cancelar")
 
   vim.ui.select(choices, {
     prompt = "🔌 " .. category .. ":",
   }, function(choice)
-    if not choice or choice:match("🚫") then
+    if not choice or choice:match("󰜺") then
       return
     end
 
-    local plugin_key = choice:match("%((.-)%)")
+    local plugin_key = choices_map[choice]
     if plugin_key then
       M.toggle_plugin(plugin_key)
     end

@@ -73,8 +73,8 @@ local function copy_file_path()
     "📄 Nombre del archivo: " .. filename,
   }
 
-  -- Solo mostrar la opción de abrir en el explorador si el archivo existe
   if file_exists then
+    -- Solo mostrar la opción de abrir en el explorador si el archivo existe
     table.insert(options, "🚀 Abrir en el explorador de archivos")
   end
 

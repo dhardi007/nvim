@@ -193,7 +193,7 @@ end, 100)
 -- Configuración de navegación TMUX con Ctrl+H
 vim.defer_fn(function()
   -- Mapear Ctrl+H para navegación en modo normal, visual e insert
-  local modes = { "n", "v", "i" }
+  local modes = { "n", "v", "i", "t" }
   for _, mode in ipairs(modes) do
     vim.keymap.set(mode, "<C-h>", function()
       require("nvim-tmux-navigation").NvimTmuxNavigateLastActive()
@@ -307,3 +307,9 @@ end, { desc = "Move line up" })
 vim.keymap.set("n", "<A-Down>", function()
   move_line("down")
 end, { desc = "Move line down" })
+
+-- =============================
+-- NOICE CMDLINE PERSONALIZADA
+-- =============================
+vim.keymap.set("n", "<leader>nd", "<cmd>NoiceDismiss<CR>", { desc = "Dismiss Noice" }) -- Para borrar notis si se BUGEA
+vim.keymap.set("n", "<leader>M", "<cmd>MCP<CR>", { desc = "  MCP HUB" }) -- Para GESTIONAR MCPHUB

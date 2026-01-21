@@ -193,10 +193,10 @@ local function show_ollama_modelfile()
 
   -- 4️⃣ Agregar instrucciones al inicio
   local instructions = {
-    "# 📝 MODELFILE DE: " .. model,
+    "# 󱜨 MODELFILE DE: " .. model,
     "# ",
     "# 🔧 EDITA ESTE ARCHIVO Y GUARDA CON :w",
-    "# ⚡ APLICA CAMBIOS: :OllamaApply  Esto descarga el modelo custom",
+    "# 󰉁 APLICA CAMBIOS: :OllamaApply  Esto descarga el modelo custom",
     "# ",
     "# 󰧑 🔧¿Como desactivar NOTHINK? ",
 
@@ -253,22 +253,22 @@ local function show_ollama_modelfile()
     end)
   end, { desc = " 󰎣  Crear modelo personalizado desde este Modelfile" })
 
-  vim.notify("📝 Edita el Modelfile. Aplica con :OllamaApply", vim.log.levels.INFO)
+  vim.notify("󱜨 Edita el Modelfile. Aplica con :OllamaApply", vim.log.levels.INFO)
 end
 
 local function show_ollama_menu(selected_text)
   local current_model = vim.g.ollama_model or "deepseek-r1"
   local options = {
-    "󰎣 🔍 [Local] Revisar código ",
-    "📚 [Local] Explicar código ",
-    "🐛 [Local] Debuggear error ",
-    "♻️ [Local] Refactorizar ",
-    "⚡ [Local] Optimizar ",
-    "💬 [Local] Chat Libre ",
-    "📄 [Local] Ver/Editar Modelfile (" .. current_model .. ") ",
-    "📋 [Local] Listar modelos instalados ",
-    "⚙️ [Local] Cambiar modelo (" .. current_model .. ") ",
-    "💬 [Local] Logearte con Ollama + API para usar CLOUD ",
+    "󰎣  Revisar código ",
+    "󰎣 󱜨 [Local] Explicar código ",
+    "󰎣  [Local] Debuggear error ",
+    "󰎣 󰈏 [Local] Refactorizar ",
+    "󰎣 󰓅 [Local] Optimizar ",
+    "󰎣 󱋑 [Local] Chat Libre ",
+    "󰎣 󱁻 [Local] Ver/Editar Modelfile (" .. current_model .. ") ",
+    "󰎣 󰊾🐐 [Local] Listar modelos instalados ",
+    "󰎣 󰓡 [Local] Cambiar modelo (" .. current_model .. ") ",
+    "󰎣 󰍂 [Local] Logearte con Ollama + API para usar CLOUD ",
   }
 
   vim.ui.select(options, {
@@ -328,11 +328,11 @@ local function show_ollama_menu(selected_text)
 end
 
 -- Mapeos
-vim.keymap.set("n", "<leader>ao", function()
+vim.keymap.set("n", "<leader>aO", function()
   show_ollama_menu(nil)
 end, { desc = " 󰎣  🦙 Abrir Ollama" })
 
-vim.keymap.set("v", "<leader>ao", function()
+vim.keymap.set("v", "<leader>aO", function()
   vim.cmd('normal! "+y')
   local selected_text = vim.fn.getreg('"')
   show_ollama_menu(selected_text)
