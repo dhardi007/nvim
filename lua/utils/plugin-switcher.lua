@@ -28,7 +28,7 @@ local PLUGINS_CONFIG = {
     category = "AI Assistant",
   },
   crawbot_open = {
-    name = "Crawbot Open",
+    name = "Crawbot Openclaw",
     icon = "󰧑",
     file = "openclaw.lua",
     category = "AI Assistant",
