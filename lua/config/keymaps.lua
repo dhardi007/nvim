@@ -30,16 +30,16 @@ end, { desc = "Abrir dashboard de Snacks" })
 -- Mapear Ctrl+T y Space+A+N para {add new file} abrir una nueva pestaña - lo mismo que space + m + n
 
 -- Crear nuevo archivo desde treesitter - arbol de archivo - lo mismo que Control + Ts
-vim.keymap.set("n", "<leader>an", function()
-  local dir = vim.fn.expand("%:p:h") -- ruta del buffer actual
-  if dir == "" then
-    dir = vim.loop.cwd() -- fallback si no hay archivo
-  end
-  local name = vim.fn.input("Nombre del archivo: ")
-  if name ~= "" then
-    vim.cmd("tabnew " .. dir .. "/" .. name)
-  end
-end, { noremap = true, silent = true, desc = "  Nuevo archivo [add new file]" })
+-- vim.keymap.set("n", "<leader>an", function()
+--   local dir = vim.fn.expand("%:p:h") -- ruta del buffer actual
+--   if dir == "" then
+--     dir = vim.loop.cwd() -- fallback si no hay archivo
+--   end
+--   local name = vim.fn.input("Nombre del archivo: ")
+--   if name ~= "" then
+--     vim.cmd("tabnew " .. dir .. "/" .. name)
+--   end
+-- end, { noremap = true, silent = true, desc = "  Nuevo archivo [add new file]" })
 
 -- keymap.set("n", "<C-t>", ":tabnew<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-t>", function()

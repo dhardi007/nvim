@@ -318,7 +318,7 @@ return {
         -- 🎨 COMPORTAMIENTO
         behaviour = {
           enable_cursor_planning_mode = true,
-          auto_suggestions = false, -- Desactiva auto-sugerencias CHOCA con OLLAMA  .
+          auto_suggestions = true, -- Desactiva auto-sugerencias CHOCA con OLLAMA  .
           disable_tools = true, -- 🔥 Esto desactiva tools para TODOS los providers
           minimize_diff = true, -- ✅ Agregá esto para el minimizado de diff [RENDERIZADO]
           auto_set_highlight_group = true,
