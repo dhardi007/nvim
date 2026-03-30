@@ -1,3 +1,4 @@
+
 -- Extract from: keymaps.lua
 -- ===================================================================================
 -- Utilidades para Claude v2.1.6] ~ [by dizzi1222] - Yanked proyecto, copiar Proyecto
@@ -42,23 +43,17 @@ end
 -- Función para construir contexto rico para Claude
 local function build_claude_context(selected_text, custom_instruction)
   local repo = get_repo_context()
-  local file_path = vim.fn.expand("%:p")
   local file_type = vim.bo.filetype
   local line_num = vim.fn.line(".")
-
-  -- Convertir ruta de WSL a Windows si es necesario
-  local display_path = file_path
-  if vim.fn.has("wsl") == 1 then
-    display_path = vim.fn.system("wslpath -w " .. vim.fn.shellescape(file_path)):gsub("\n", "")
-  end
+  local abs_path = vim.fn.expand("%:p") -- ruta absoluta real
+  local rel_path = repo.relative_path -- relativa al root del repo/cwd
 
   local context = "📁 Proyecto: " .. repo.name .. "\n"
-
   if repo.is_git then
     context = context .. "🌿 Branch: " .. repo.branch .. "\n"
   end
-
-  context = context .. "📄 Archivo ($HOME(): " .. repo.relative_path .. "\n"
+  context = context .. "📄 Archivo: " .. rel_path .. "\n"
+  context = context .. "📂 Ruta: " .. abs_path .. "\n"
   context = context .. "🔤 Tipo: " .. (file_type ~= "" and file_type or "text") .. "\n"
   context = context .. "📍 Línea: " .. line_num .. "\n"
   context = context .. "💻 Sistema: " .. (vim.fn.has("wsl") == 1 and "WSL" or vim.loop.os_uname().sysname) .. "\n\n"
