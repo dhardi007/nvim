@@ -341,13 +341,13 @@ return {
 
     -- ── Abrir menú Commands del TUI ───────────────────────────
     -- \x18 solo (sin letra) abre el picker de comandos
-    {
-      "<leader>aC",
-      function()
-        send_keys_to_opencode("\x18") -- Ctrl+X solo → Commands menu
-      end,
-      desc = " 󰮮 Abrir Commands menu  (Ctrl+X)",
-    },
+    -- {
+    --   "<leader>aC",
+    --   function()
+    --     send_keys_to_opencode("\x18") -- Ctrl+X solo → Commands menu
+    --   end,
+    --   desc = " 󰮮 Abrir Commands menu  (Ctrl+X)",
+    -- },
 
     -- ── Copiar conversación ───────────────────────────────────
     {
