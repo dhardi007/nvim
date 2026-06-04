@@ -115,6 +115,16 @@ elseif is_unix then
   -- Configuración Linux/macOS
   vim.g.node_host_prog = vim.fn.exepath("node") -- toma el node del PATH
   vim.env.PATH = os.getenv("HOME") .. "/.npm-global/bin:" .. vim.env.PATH
+  -- Cargar API keys desde ~/.api-keys.sh
+  local keys_file = vim.fn.expand("~/.api-keys.sh")
+  if vim.fn.filereadable(keys_file) == 1 then
+    for _, line in ipairs(vim.fn.readfile(keys_file)) do
+      local key, value = line:match("^export%s+([%w_]+)%s*=%s*\"([^\"]+)\"")
+      if key then
+        vim.env[key] = value
+      end
+    end
+  end
 end
 
 -- bootstrap lazy.nvim, LazyVim and your plugins
@@ -124,7 +134,7 @@ require("config.keymaps") --  .
 
 -- Requiere de Keymaps
 require("config.keymaps.ollama-keys") -- keymaps para LocalAI [Ollama] 󰎣 🅾️ .
-require("config.keymaps.gemini-keys") -- keymaps para Gemini AI 󰊭 .
+-- require("config.keymaps.gemini-keys") -- keymaps para Gemini AI 󰊭 .
 -- require("config.keymaps.ai-termux-keys") -- keymaps para TermuxAI .
 -- require("config.fittencode-keys") -- Keymaps para Termux AI Autocomplete .
 require("config.keymaps.give-context") -- keymaps para utilidades IA  󰭹
@@ -216,4 +226,3 @@ end, { desc = "🔌 Toggle Plugins (Opencode/Avante/Claude/etc)" })
 vim.opt.updatetime = 100 -- Respuesta más rápida (default: 4000ms)
 vim.opt.scrolloff = 8 -- Más contexto visible
 vim.opt.synmaxcol = 500 -- Más columnas para análisis
-

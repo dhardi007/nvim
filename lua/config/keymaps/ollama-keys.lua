@@ -328,15 +328,15 @@ local function show_ollama_menu(selected_text)
 end
 
 -- MAPEOS
-vim.keymap.set("n", "<leader>al", function()
+vim.keymap.set("n", "<leader>aL", function()
   show_ollama_list()
 end, { desc = " 󰎣  🦙 Listar modelos" })
 
-vim.keymap.set("v", "<leader>aO", function()
-  vim.cmd('normal! "+y')
-  local selected_text = vim.fn.getreg('"')
-  show_ollama_menu(selected_text)
-end, { desc = " 󰎣  🦙 Enviar selección a Ollama" })
+-- vim.keymap.set("v", "<leader>aO", function()
+--   vim.cmd('normal! "+y')
+--   local selected_text = vim.fn.getreg('"')
+--   show_ollama_menu(selected_text)
+-- end, { desc = " 󰎣  🦙 Enviar selección a Ollama" })
 
 -- Mapeos DESACTIVADOS TEMPORALMENTE!!!
 -- vim.keymLap.set("n", "<leader>aO", function()

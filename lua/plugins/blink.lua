@@ -4,9 +4,9 @@ return {
   lazy = true,
   dependencies = { "saghen/blink.compat" },
   opts = {
-    -- fuzzy = {
-    --   implementation = "lua", -- ✅ Evita descargar binario
-    -- },
+    enabled = function()
+      return vim.b.blink_cmp_enabled ~= false
+    end,
     sources = {
       default = { "avante_commands", "avante_mentions", "avante_files" },
       compat = {

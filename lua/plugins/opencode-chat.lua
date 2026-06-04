@@ -1,119 +1,41 @@
--- 🐐🗣️🔥️✍️ NO REQUIERE API: -- -- ✍️ Activar con: <leader>ao
---  Ctrl+X+M → Cambiar Model  |  Ctrl+X+A → Cambiar Provider  |  Ctrl+X+L → Switch Session
---  ~ (MEJOR QUE ANTIGRAVITY\CHAT Nativo)
+-- 🐐🗣️🔥️✍️ NO REQUIERE API: Opencode (NickvanDyke)
+--  <leader>ao → Toggle  |  <C-a> → Ask @this  |  <C-x> → Select
+--  <leader>ag → Menú de prompts  |  go/goo → operadores
+--  @buffer, @this, @diagnostics nativos
 --
--- ────────────────────────────────────────────────────────────
--- Utilities [by dizzi1222] — contexto rico para opencode
--- ────────────────────────────────────────────────────────────
-local function get_repo_context()
-  local cwd = vim.fn.getcwd()
-  local git_root = vim.fn.system("git -C " .. vim.fn.shellescape(cwd) .. " rev-parse --show-toplevel 2>/dev/null")
-
-  if vim.v.shell_error == 0 then
-    git_root = git_root:gsub("\n", "")
-    local repo_name = vim.fn.fnamemodify(git_root, ":t")
-    local branch = vim.fn
-      .system("git -C " .. vim.fn.shellescape(git_root) .. " rev-parse --abbrev-ref HEAD 2>/dev/null")
-      :gsub("\n", "")
-    return {
-      is_git = true,
-      root = git_root,
-      name = repo_name,
-      branch = branch,
-      relative_path = vim.fn.fnamemodify(vim.fn.expand("%:p"), ":~:."),
-    }
+-- TUI fallback para comandos que el server no expone (/fork, /share, Ctrl+X)
+local function tui_send(text, focus)
+  if focus == nil then
+    focus = true
   end
-
-  return {
-    is_git = false,
-    root = cwd,
-    name = vim.fn.fnamemodify(cwd, ":t"),
-    relative_path = vim.fn.expand("%:t"),
-  }
-end
-
-local function build_claude_context(selected_text, custom_instruction)
-  local repo = get_repo_context()
-  local file_type = vim.bo.filetype
-  local line_num = vim.fn.line(".")
-  local abs_path = vim.fn.expand("%:p") -- ruta absoluta real
-  local rel_path = repo.relative_path -- relativa al root del repo/cwd
-
-  local context = "📁 Proyecto: " .. repo.name .. "\n"
-  if repo.is_git then
-    context = context .. "🌿 Branch: " .. repo.branch .. "\n"
-  end
-  context = context .. "📄 Archivo: " .. rel_path .. "\n"
-  context = context .. "📂 Ruta: " .. abs_path .. "\n"
-  context = context .. "🔤 Tipo: " .. (file_type ~= "" and file_type or "text") .. "\n"
-  context = context .. "📍 Línea: " .. line_num .. "\n"
-  context = context .. "💻 Sistema: " .. vim.loop.os_uname().sysname .. "\n\n"
-
-  if custom_instruction then
-    context = context .. "📝 Instrucción: " .. custom_instruction .. "\n\n"
-  end
-
-  if selected_text and selected_text ~= "" then
-    context = context .. "```" .. file_type .. "\n" .. selected_text .. "\n```\n"
-  end
-
-  return context
-end
-
--- ────────────────────────────────────────────────────────────
--- Helper: enviar texto/slash commands al TUI de opencode
--- ────────────────────────────────────────────────────────────
-local function send_to_opencode(text)
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+  local bufs = vim.api.nvim_list_bufs()
+  for i = 1, #bufs do
+    local buf = bufs[i]
     if vim.bo[buf].buftype == "terminal" then
       local name = vim.api.nvim_buf_get_name(buf)
       if name:match("opencode") then
         local chan = vim.bo[buf].channel
         if chan and chan > 0 then
-          vim.api.nvim_chan_send(chan, text .. "\n")
-          local winid = vim.fn.bufwinid(buf)
-          if winid ~= -1 then
-            vim.api.nvim_set_current_win(winid)
-            vim.cmd("startinsert")
+          vim.api.nvim_chan_send(chan, text)
+          if focus then
+            local win = vim.fn.bufwinid(buf)
+            if win ~= -1 then
+              vim.api.nvim_set_current_win(win)
+              vim.cmd("startinsert")
+            end
           end
+          return true
         end
-        return
       end
     end
   end
-end
-
--- Helper: enviar secuencias de teclas de control al TUI (Ctrl+X combos)
--- Enfoca el terminal igual que send_to_opencode para que el combo llegue bien
-local function send_keys_to_opencode(keys)
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.bo[buf].buftype == "terminal" then
-      local name = vim.api.nvim_buf_get_name(buf)
-      if name:match("opencode") then
-        local chan = vim.bo[buf].channel
-        if chan and chan > 0 then
-          local winid = vim.fn.bufwinid(buf)
-          if winid ~= -1 then
-            vim.api.nvim_set_current_win(winid)
-            vim.cmd("startinsert")
-          end
-          vim.defer_fn(function()
-            vim.api.nvim_chan_send(chan, keys)
-          end, 50)
-        end
-        return
-      end
-    end
-  end
+  return false
 end
 
 return {
   "NickvanDyke/opencode.nvim",
-  name = "opencode-nick", -- ← IMPORTANTE: nombre único
+  name = "opencode-nick",
   dependencies = {
-    --  Recommended for `ask()` and `select()`.
-    -- Required for `snacks` provider.
-    ---@module 'snacks' <- Loads `snacks.nvim` types for configuration intellisense.
     { "folke/snacks.nvim", opts = { input = {}, picker = {}, terminal = {} } },
   },
   keys = {
@@ -124,69 +46,75 @@ return {
         require("opencode").toggle()
       end,
       mode = { "n" },
-      desc = " 󰮮 Toggle OpenCode [Cli]",
+      desc = " 󰮮 Toggle OpenCode",
     },
 
     -- ── Ask / Prompts ─────────────────────────────────────────
     {
-      "<leader>ai",
+      "<leader>al",
       function()
-        require("opencode").ask("", { submit = false })
+        local as_group = vim.api.nvim_create_augroup("opencode_as_focus", { clear = true })
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "OpencodeEvent:*",
+          group = as_group,
+          once = true,
+          callback = function()
+            vim.defer_fn(function()
+              for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                if vim.bo[buf].buftype == "terminal" and vim.api.nvim_buf_get_name(buf):match("opencode") then
+                  local win = vim.fn.bufwinid(buf)
+                  if win ~= -1 then
+                    vim.api.nvim_set_current_win(win)
+                    vim.cmd("startinsert")
+                  end
+                  break
+                end
+              end
+            end, 100)
+          end,
+        })
+        require("opencode").ask("@this: ", { submit = false })
       end,
       mode = { "n", "x" },
-      desc = " 󰮮 OpenCode ask (input libre)",
+      desc = "󰮮 OpenCode - Send / Ask a Opencode [Input]",
     },
-    {
-      "<leader>aI",
-      function()
-        require("opencode").ask("@this: ", { submit = true })
-      end,
-      mode = { "n", "x" },
-      desc = " 󰮮 OpenCode ask with context (@this)",
-    },
-
-    -- ── Buffer / Archivos ─────────────────────────────────────
-    -- Envía el buffer actual con contexto rico (repo, branch, filetype, línea)
-    {
-      "<leader>ab",
-      function()
-        local full_file = vim.fn.join(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
-        local context = build_claude_context(full_file, "Aquí está el archivo completo:")
-        local repo = get_repo_context()
-        send_to_opencode(context)
-        vim.notify("󰮮 Buffer enviado a OpenCode\n📁 " .. repo.name, vim.log.levels.INFO)
-      end,
-      mode = { "n" },
-      desc = " 󰮮 Send buffer actual con contexto",
-    },
-    -- Envía todos los buffers abiertos con contexto rico
-    {
-      "<leader>av",
-      function()
-        local full_file = vim.fn.join(vim.api.nvim_buf_get_lines(0, 0, -1, false), "\n")
-        local context = build_claude_context(full_file, "Aquí está el archivo completo:")
-        local repo = get_repo_context()
-        send_to_opencode(context)
-        vim.notify("󰮮 Buffer enviado a OpenCode\n📁 " .. repo.name, vim.log.levels.INFO)
-      end,
-      mode = { "n" },
-      desc = " 󰮮 Send buffer completo con contexto",
-    },
-
-    -- ── Send selección (como ClaudeCodeSend) ──────────────────
-    -- Envía el texto seleccionado con contexto rico (repo, branch, filetype, línea)
     {
       "<leader>as",
       function()
-        -- Salir de visual para fijar la selección en registro "v"
-        vim.cmd('normal! "vy')
-        local selected_text = vim.fn.getreg("v")
-        local context = build_claude_context(selected_text, "Código seleccionado:")
-        send_to_opencode(context)
-        vim.notify("󰮮 Selección enviada a OpenCode", vim.log.levels.INFO)
+        require("opencode").prompt("@this: ")
+        vim.defer_fn(function()
+          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.bo[buf].buftype == "terminal" and vim.api.nvim_buf_get_name(buf):match("opencode") then
+              local win = vim.fn.bufwinid(buf)
+              if win ~= -1 then
+                vim.api.nvim_set_current_win(win)
+                vim.cmd("startinsert")
+              end
+              break
+            end
+          end
+        end, 200)
       end,
-      mode = { "v" },
-      desc = " 󰮮 Send selección con contexto a OpenCode",
+      mode = { "n", "x" },
+      desc = " 󰮮 OpenCode - Send / Enviar a Opencode TUI",
+    },
+
+    -- ── Buffers como contexto (no submit, solo referencia) ─────
+    {
+      "<leader>ab",
+      function()
+        require("opencode").ask("@buffer: ", { submit = false })
+      end,
+      mode = { "n" },
+      desc = " 󰮮 Agregar @buffer a contexto (sin enviar)",
+    },
+    {
+      "<leader>aB",
+      function()
+        require("opencode").ask("@buffers: ", { submit = false })
+      end,
+      mode = { "n" },
+      desc = " 󰮮 Agregar @buffers (todos) a contexto",
     },
 
     -- ── Prompts built-in ──────────────────────────────────────
@@ -247,14 +175,7 @@ return {
       desc = " 󰮮 OpenCode optimize",
     },
 
-    -- ── Session via command() API / Ctrl+X combos ─────────────
-    {
-      "<leader>aL",
-      function()
-        send_keys_to_opencode("\x18l") -- Ctrl+X L → Switch Session
-      end,
-      desc = " 󰮮 Switch Session / Historial  (Ctrl+X L)",
-    },
+    -- ── Session management ────────────────────────────────────
     {
       "<leader>an",
       function()
@@ -263,34 +184,32 @@ return {
       desc = " 󰮮 New Session",
     },
     {
-      "<leader>au",
+      "<leader>al",
       function()
-        send_keys_to_opencode("\x18u") -- Ctrl+X U → undo
-        --     require("opencode").command("session.undo")
+        tui_send("\x18l")
       end,
-      desc = " 󰮮 Undo último mensaje  (Ctrl+X U)",
+      desc = " 󰮮 Select Session (Ctrl+X L)",
     },
     {
-      "<leader>aW",
+      "<leader>au",
       function()
-        send_keys_to_opencode("\x18u") -- alias de au
+        require("opencode").command("session.undo")
       end,
-      desc = " 󰮮 Undo último mensaje  (alias)",
+      desc = " 󰮮 Undo último mensaje",
     },
     {
       "<leader>ar",
       function()
-        send_keys_to_opencode("\x18r") -- Ctrl+X R → redo
-        --     require("opencode").command("session.redo")
+        require("opencode").command("session.redo")
       end,
-      desc = " 󰮮 Redo acción  (Ctrl+X R)",
+      desc = " 󰮮 Redo acción",
     },
     {
       "<leader>ax",
       function()
-        send_keys_to_opencode("\x03") -- Ctrl+C → interrupt real al proceso
+        require("opencode").command("session.interrupt")
       end,
-      desc = " 󰮮 Interrupt / Detener opencode  (Ctrl+C)",
+      desc = " 󰮮 Interrupt / Detener opencode",
     },
     {
       "<leader>ak",
@@ -299,107 +218,144 @@ return {
       end,
       desc = " 󰮮 Compact / Reducir contexto",
     },
-    -- NO LO NECESITO
-    -- {
-    --   "<leader>ash",
-    --   function()
-    --     require("opencode").command("session.share")
-    --   end,
-    --   desc = " 󰮮 Share session",
-    -- },
-
-    -- ── Model / Provider / Theme vía secuencias Ctrl+X ────────
-    -- \x18 = Ctrl+X  |  ver shortcuts en el TUI con Ctrl+X solo
-    {
-      "<leader>am",
-      function()
-        send_keys_to_opencode("\x18m") -- Ctrl+X M → Switch Model
-      end,
-      desc = " 󰮮 Switch Model  (Ctrl+X M)",
-    },
-    {
-      "<leader>aa",
-      function()
-        send_keys_to_opencode("\x18a") -- Ctrl+X A → Switch Provider
-      end,
-      desc = " 󰮮 Switch Provider  (Ctrl+X A)",
-    },
-    {
-      "<leader>aA",
-      function()
-        send_keys_to_opencode("\x18a") -- Ctrl+X A → Plan/Coding mode (mismo binding)
-      end,
-      desc = " 󰮮 Switch Plan/Coding mode  (Ctrl+X A)",
-    },
-    {
-      "<leader>at",
-      function()
-        send_keys_to_opencode("\x18t") -- Ctrl+X T → Switch colorscheme/theme
-      end,
-      desc = " 󰮮 Switch Theme / Colorscheme  (Ctrl+X T)",
-    },
-
-    -- ── Abrir menú Commands del TUI ───────────────────────────
-    -- \x18 solo (sin letra) abre el picker de comandos
-    -- {
-    --   "<leader>aC",
-    --   function()
-    --     send_keys_to_opencode("\x18") -- Ctrl+X solo → Commands menu
-    --   end,
-    --   desc = " 󰮮 Abrir Commands menu  (Ctrl+X)",
-    -- },
-
-    -- ── Copiar conversación ───────────────────────────────────
     {
       "<leader>ac",
       function()
-        send_to_opencode("/copy")
+        tui_send("/share\n")
       end,
-      desc = " 󰮮 /copy - Copiar conversación",
+      mode = { "n", "x" },
+      desc = " 󰮮 Share session (link)",
+    },
+    {
+      "<leader>aF",
+      function()
+        tui_send("/fork\n")
+      end,
+      mode = { "n", "x" },
+      desc = " 󰮮 Fork session (desde este punto)",
     },
 
-    -- ── Slash commands directos al TUI ────────────────────────
+    -- ── Focus TUI terminal ───────────────────────────────────
     {
       "<leader>af",
       function()
-        send_to_opencode("/fork")
+        local bufs = vim.api.nvim_list_bufs()
+        for i = 1, #bufs do
+          if vim.bo[bufs[i]].buftype == "terminal" then
+            local name = vim.api.nvim_buf_get_name(bufs[i])
+            if name:match("opencode") then
+              local win = vim.fn.bufwinid(bufs[i])
+              if win ~= -1 then
+                vim.api.nvim_set_current_win(win)
+                vim.cmd("startinsert")
+                return
+              end
+            end
+          end
+        end
+        require("opencode").toggle()
       end,
-      desc = " 󰮮 /fork - Bifurcar sesión",
+      desc = " 󰮮 Focus TUI terminal Opencode",
     },
+
+    -- ── Model / Provider selector ────────────────────────────
     {
-      "<leader>aN",
+      "<leader>am",
       function()
-        vim.ui.input({ prompt = "  Rename session: " }, function(name)
-          if name and name ~= "" then
-            send_to_opencode("/rename " .. name)
+        tui_send("\x18m")
+      end,
+      desc = " 󰮮 Select Model (Ctrl+X M)",
+    },
+
+    -- ── Menú de prompts (desde gemini-keys) ───────────────────
+    {
+      "<leader>ag",
+      function()
+        local options = {
+          "   Revisar código",
+          "  󱜨 Explicar código",
+          "   Debuggear error",
+          "  󰈏 Refactorizar",
+          "  󰓅 Optimizar",
+          "   󱋑 Personalizado",
+        }
+        local prompts = {
+          "Revisa este código y sugiere mejoras:",
+          "Explica este código paso a paso:",
+          "Debuggea este error:",
+          "Refactoriza este código:",
+          "Optimiza este código:",
+        }
+        vim.ui.select(options, {
+          prompt = " 󰊭 ~ Acción Opencode:",
+        }, function(choice, idx)
+          if not choice then
+            return
+          end
+          if idx == 6 then
+            vim.ui.input({ prompt = "Tu prompt: " }, function(input)
+              if input and input ~= "" then
+                require("opencode").ask("@this: " .. input, { submit = true })
+              end
+            end)
+          else
+            require("opencode").ask("@this: " .. prompts[idx], { submit = true })
           end
         end)
       end,
-      desc = " 󰮮 /rename - Renombrar sesión",
+      mode = { "n", "x" },
+      desc = " 󰮮 Menú de prompts Opencode",
     },
   },
 
   config = function()
     ---@type opencode.Opts
     vim.g.opencode_opts = {
-      -- Your configuration, if any — see `lua/opencode/config.lua`, or "goto definition" on the type or field.
       providers = {
         anthropic = {
-          -- auth_type = "max",  --   Opencode SOLO  funciona con API KEYS
-          api_key_cmd = "echo $ANTHROPIC_API_KEY", -- 🔥 Cambiar ESTO
+          api_key_cmd = "echo $ANTHROPIC_API_KEY",
           model = "claude-sonnet-4-20250514",
+        },
+        gemini = {
+          auth_type = "oauth",
+          model = "gemini-2.5-pro",
+          models = {
+            ["gemini-2.5-pro"] = {
+              options = {
+                thinkingConfig = {
+                  thinkingBudget = 8192,
+                  includeThoughts = true,
+                },
+              },
+            },
+          },
         },
       },
       default_provider = "anthropic",
     }
 
-    -- Required for `opts.events.reload`.
     vim.o.autoread = true
+
+    -- ── Inputs flotantes: limpios, sin autocompletado ──
+    local function clean_input()
+      vim.b.cmp_enabled = false
+      vim.b.blink_cmp_enabled = false
+      vim.keymap.set("i", "<Esc>", "<Esc>", { buffer = true, desc = "Exit insert mode" })
+      vim.keymap.set("i", "<C-BS>", "<C-W>", { buffer = true, desc = "Delete prev word" })
+    end
+    vim.api.nvim_create_autocmd("InsertEnter", {
+      callback = function(args)
+        local ft = vim.bo[args.buf].filetype
+        if ft == "opencode_ask" or ft == "AvanteAsk" or ft == "AvanteInput" then
+          clean_input()
+        end
+      end,
+    })
 
     -- ── Keymaps globales ──────────────────────────────────────
     vim.keymap.set({ "n", "x" }, "<C-a>", function()
       require("opencode").ask("@this: ", { submit = true })
-    end, { desc = " 󰮮 Ask opencode… " })
+    end, { desc = " 󰮮 Ask opencode…" })
     vim.keymap.set({ "n", "x" }, "<C-x>", function()
       require("opencode").select()
     end, { desc = " 󰮮 Execute opencode action…" })
@@ -420,9 +376,5 @@ return {
     vim.keymap.set("n", "<S-C-d>", function()
       require("opencode").command("session.half.page.down")
     end, { desc = " 󰮮 Scroll opencode down" })
-
-    -- Preservar comportamiento nativo de +/- en normal mode
-    -- vim.keymap.set("n", "+", "<C-a>", { desc = " 󰮮 Increment under cursor", noremap = true })
-    -- vim.keymap.set("n", "-", "<C-x>", { desc = " 󰮮 Decrement under cursor", noremap = true })
   end,
 }

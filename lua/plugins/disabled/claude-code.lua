@@ -39,11 +39,11 @@ return {
   keys = {
     { "<leader>a", nil, desc = " AI / IA Claude Code" },
     { "<leader>ac", "<cmd>ClaudeCode<cr>", desc = " Toggle / Alternar Claude" },
-    -- { "<leader>aF", "<cmd>ClaudeCodeFocus<cr>", desc = " Focus / Enfocar Claude" },
-    { "<leader>ar", "<cmd>ClaudeCode --resume<cr>", desc = " Resume / Reanudar Claude History" },
+    { "<leader>af", "<cmd>ClaudeCodeFocus<cr>", desc = " Focus / Enfocar Claude" },
+    { "<leader>al", "<cmd>ClaudeCode --resume<cr>", desc = " Resume / Reanudar Claude History Session" },
     { "<leader>aC", "<cmd>ClaudeCode --continue<cr>", desc = " Continue / Continuar Claude" },
     { "<leader>am", "<cmd>ClaudeCodeSelectModel<cr>", desc = " Select model / Seleccionar modelo" },
-    { "<leader>av", "<cmd>ClaudeCodeAdd %<cr>", desc = " Add buffer / Agregar buffer actual" }, -- antes con ab
+    { "<leader>ab", "<cmd>ClaudeCodeAdd %<cr>", desc = " Add buffer / Agregar buffer actual" }, -- antes con ab
     { "<leader>as", "<cmd>ClaudeCodeSend<cr>", mode = "v", desc = " Send / Enviar a Claude" },
     {
       "<leader>as",
@@ -70,7 +70,7 @@ return {
       desc = " /rename - Renombrar conversación",
     },
     {
-      "<leader>af",
+      "<leader>aF",
       function()
         send_to_claude("/fork")
       end,
