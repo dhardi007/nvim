@@ -285,16 +285,25 @@ return {
           openrouter = {
             __inherited_from = "openai",
             endpoint = "https://openrouter.ai/api/v1",
-            model = "qwen/qwen3-coder:free",
+            model = "gpt-oss-120b:free", -- LIGERO:
+            -- ──────────────────────────────────────────────────────────
+            -- 🏆 MEJORES MODELOS GRATIS PARA CODING (OpenRouter)
+            -- ──────────────────────────────────────────────────────────
+            -- 1. gpt-oss-120b:free  ← 117B MoE (5.1B activos), reasoning configurable,
+            --    tool use nativo, el más polenta para código + arquitectura
+            -- 2. owl-alpha:free     ← #1 en uso (1.99T tokens), agentic, 1.05M ctx
+            -- 3. poolside/laguna-m.1:free ← especialista SWE, tool calling + reasoning
+            -- 4. moonshotai/kimi-k2.6:free ← long-horizon coding, agent swarm
+            -- 5. qwen/qwen3-coder:free ← rápido y liviano para código puro
+            -- ──────────────────────────────────────────────────────────
             mode = "legacy", -- USA Tools para OpenRouter
             disable_tools = true, -- 🔥 Agregar esto
-            model = "deepseek/deepseek-v4-flash",
-            -- model = "deepseek-r1-0528:free",
             api_key_name = "OPEN_ROUTER_API_KEY",
             timeout = 30000, -- Timeout in milliseconds
             extra_request_body = {
               temperature = 0.75,
               max_tokens = 32768,
+              reasoning = { enabled = false }, -- 🔥 Desactiva thinking mode en modelos que lo soporten
             },
           },
         },

@@ -119,7 +119,7 @@ elseif is_unix then
   local keys_file = vim.fn.expand("~/.api-keys.sh")
   if vim.fn.filereadable(keys_file) == 1 then
     for _, line in ipairs(vim.fn.readfile(keys_file)) do
-      local key, value = line:match("^export%s+([%w_]+)%s*=%s*\"([^\"]+)\"")
+      local key, value = line:match('^export%s+([%w_]+)%s*=%s*"([^"]+)"')
       if key then
         vim.env[key] = value
       end
@@ -133,7 +133,8 @@ require("config.lazy") --  .
 require("config.keymaps") --  .
 
 -- Requiere de Keymaps
-require("config.keymaps.ollama-keys") -- keymaps para LocalAI [Ollama] 󰎣 🅾️ .
+-- require("config.keymaps.ollama-keys") -- keymaps para LocalAI [Ollama] 󰎣 🅾️ .
+require("config.keymaps.openrouter-keys") -- keymaps para OpenRouter 󱋭 .
 -- require("config.keymaps.gemini-keys") -- keymaps para Gemini AI 󰊭 .
 -- require("config.keymaps.ai-termux-keys") -- keymaps para TermuxAI .
 -- require("config.fittencode-keys") -- Keymaps para Termux AI Autocomplete .

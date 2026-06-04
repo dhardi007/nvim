@@ -115,7 +115,7 @@ local function open_ollama(prompt, input_text, use_nothink)
   vim.cmd("startinsert")
 end
 
--- 🆕 Función para listar modelos
+-- Función para listar modelos
 local function show_ollama_list()
   local cmd_exec = get_ollama_cmd()
   if not cmd_exec then
@@ -123,9 +123,6 @@ local function show_ollama_list()
     return
   end
 
-  vim.cmd("split")
-
-  -- Si usamos WSL wrapper, necesitamos quotear el comando
   local full_cmd
   if cmd_exec:match("^wsl.*-lic$") then
     full_cmd = cmd_exec .. " 'ollama list'"
@@ -133,8 +130,40 @@ local function show_ollama_list()
     full_cmd = cmd_exec .. " list"
   end
 
-  vim.cmd("term " .. full_cmd)
-  vim.cmd("startinsert")
+  vim.fn.jobstart({ "bash", "-c", full_cmd }, {
+    stdout_buffered = true,
+    on_stdout = function(_, data)
+      if not data or #data == 0 then return end
+      local raw = table.concat(data, "\n")
+      local lines = { " 󰎣 Ollama modelos disponibles:", "" }
+      for _, line in ipairs(vim.split(raw, "\n")) do
+        if line ~= "" and not line:match("^NAME") then
+          table.insert(lines, " 󰎣 " .. line)
+        end
+      end
+      table.insert(lines, "")
+      table.insert(lines, "Presiona q para cerrar")
+
+      vim.api.nvim_open_win(vim.api.nvim_create_buf(false, true), true, {
+        relative = "editor",
+        width = 72,
+        height = math.min(#lines + 2, 30),
+        row = 2,
+        col = math.floor((vim.o.columns - 72) / 2),
+        style = "minimal",
+        border = "rounded",
+        title = " Ollama Models ",
+      })
+      vim.api.nvim_buf_set_name(0, "ollama://models")
+      vim.api.nvim_buf_set_lines(0, 0, -1, false, lines)
+      vim.bo.filetype = "markdown"
+      vim.keymap.set("n", "q", "<cmd>q<CR>", { buffer = true })
+      vim.cmd("stopinsert")
+    end,
+    on_stderr = function(_, err)
+      vim.notify("❌ Error: " .. table.concat(err or {}, ""), vim.log.levels.ERROR)
+    end,
+  })
 end
 
 -- 🔥 FUNCIÓN MEJORADA: Ver Y EDITAR Modelfile
@@ -332,11 +361,11 @@ vim.keymap.set("n", "<leader>aL", function()
   show_ollama_list()
 end, { desc = " 󰎣  🦙 Listar modelos" })
 
--- vim.keymap.set("v", "<leader>aO", function()
---   vim.cmd('normal! "+y')
---   local selected_text = vim.fn.getreg('"')
---   show_ollama_menu(selected_text)
--- end, { desc = " 󰎣  🦙 Enviar selección a Ollama" })
+vim.keymap.set("v", "<leader>aO", function()
+  vim.cmd('normal! "+y')
+  local selected_text = vim.fn.getreg('"')
+  show_ollama_menu(selected_text)
+end, { desc = " 󰎣  🦙 Enviar selección a Ollama" })
 
 -- Mapeos DESACTIVADOS TEMPORALMENTE!!!
 -- vim.keymLap.set("n", "<leader>aO", function()
