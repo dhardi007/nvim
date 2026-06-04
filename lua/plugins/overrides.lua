@@ -39,6 +39,9 @@ return {
             return require("lspconfig.util").root_pattern("angular.json", "project.json")(fname)
           end,
         },
+        lua_ls = {
+          mason = false,
+        },
         nil_ls = {
           -- Configuration for nil (Nix Language Server), already installed via nix
           cmd = { "nil" },
