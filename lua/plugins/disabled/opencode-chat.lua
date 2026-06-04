@@ -1,56 +1,123 @@
--- 🐐🗣️🔥️✍️ NO REQUIERE API: -- -- ✍️ Activar con:OpenCodeToggle  Luego  Ctrl + X + M (Cambiar Model)  Ctrl+A (Cambiar de Provider)        ~ (MEJOR QUE ANTIGRAVITY\CHAT Nativo)
+-- 🐐🗣️🔥️✍️ NO REQUIERE API: Opencode (NickvanDyke)
+--  <leader>ao → Toggle  |  <C-a> → Ask @this  |  <C-x> → Select
+--  <leader>ag → Menú de prompts  |  go/goo → operadores
+--  @buffer, @this, @diagnostics nativos
 --
+-- TUI fallback para comandos que el server no expone (/fork, /share, Ctrl+X)
+local function tui_send(text, focus)
+  if focus == nil then
+    focus = true
+  end
+  local bufs = vim.api.nvim_list_bufs()
+  for i = 1, #bufs do
+    local buf = bufs[i]
+    if vim.bo[buf].buftype == "terminal" then
+      local name = vim.api.nvim_buf_get_name(buf)
+      if name:match("opencode") then
+        local chan = vim.bo[buf].channel
+        if chan and chan > 0 then
+          vim.api.nvim_chan_send(chan, text)
+          if focus then
+            local win = vim.fn.bufwinid(buf)
+            if win ~= -1 then
+              vim.api.nvim_set_current_win(win)
+              vim.cmd("startinsert")
+            end
+          end
+          return true
+        end
+      end
+    end
+  end
+  return false
+end
+
 return {
   "NickvanDyke/opencode.nvim",
-  name = "opencode-nick", -- ← IMPORTANTE: nombre único
+  name = "opencode-nick",
   dependencies = {
-    --  Recommended for `ask()` and `select()`.
-    -- Required for `snacks` provider.
-    ---@module 'snacks' <- Loads `snacks.nvim` types for configuration intellisense.
     { "folke/snacks.nvim", opts = { input = {}, picker = {}, terminal = {} } },
   },
   keys = {
-    -- {
-    --   "<leader>aa",
-    --   function()
-    --     require("opencode").toggle()
-    --   end,
-    --   mode = { "n" },
-    --   desc = " 󰮮 Toggle OpenCode [Cli]",
-    -- },
+    -- ── Toggle ───────────────────────────────────────────────
     {
       "<leader>ao",
       function()
         require("opencode").toggle()
       end,
       mode = { "n" },
-      desc = " 󰮮 Toggle OpenCode [Cli]",
+      desc = " 󰮮 Toggle OpenCode",
     },
 
+    -- ── Ask / Prompts ─────────────────────────────────────────
     {
-      "<leader>ai",
+      "<leader>al",
       function()
-        require("opencode").ask("", { submit = true })
+        local as_group = vim.api.nvim_create_augroup("opencode_as_focus", { clear = true })
+        vim.api.nvim_create_autocmd("User", {
+          pattern = "OpencodeEvent:*",
+          group = as_group,
+          once = true,
+          callback = function()
+            vim.defer_fn(function()
+              for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                if vim.bo[buf].buftype == "terminal" and vim.api.nvim_buf_get_name(buf):match("opencode") then
+                  local win = vim.fn.bufwinid(buf)
+                  if win ~= -1 then
+                    vim.api.nvim_set_current_win(win)
+                    vim.cmd("startinsert")
+                  end
+                  break
+                end
+              end
+            end, 100)
+          end,
+        })
+        require("opencode").ask("@this: ", { submit = false })
       end,
       mode = { "n", "x" },
-      desc = " 󰮮 OpenCode ask",
+      desc = "󰮮 OpenCode - Send / Ask a Opencode [Input]",
     },
     {
-      "<leader>aI",
+      "<leader>as",
       function()
-        require("opencode").ask("@this: ", { submit = true })
+        require("opencode").prompt("@this: ")
+        vim.defer_fn(function()
+          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.bo[buf].buftype == "terminal" and vim.api.nvim_buf_get_name(buf):match("opencode") then
+              local win = vim.fn.bufwinid(buf)
+              if win ~= -1 then
+                vim.api.nvim_set_current_win(win)
+                vim.cmd("startinsert")
+              end
+              break
+            end
+          end
+        end, 200)
       end,
       mode = { "n", "x" },
-      desc = " 󰮮 OpenCode ask with context",
+      desc = " 󰮮 OpenCode - Send / Enviar a Opencode TUI",
     },
+
+    -- ── Buffers como contexto (no submit, solo referencia) ─────
     {
       "<leader>ab",
       function()
-        require("opencode").ask("@file ", { submit = true })
+        require("opencode").ask("@buffer: ", { submit = false })
       end,
-      mode = { "n", "x" },
-      desc = " 󰮮 OpenCode ask about buffer",
+      mode = { "n" },
+      desc = " 󰮮 Agregar @buffer a contexto (sin enviar)",
     },
+    {
+      "<leader>aB",
+      function()
+        require("opencode").ask("@buffers: ", { submit = false })
+      end,
+      mode = { "n" },
+      desc = " 󰮮 Agregar @buffers (todos) a contexto",
+    },
+
+    -- ── Prompts built-in ──────────────────────────────────────
     {
       "<leader>ap",
       function()
@@ -59,7 +126,6 @@ return {
       mode = { "n", "x" },
       desc = " 󰮮 OpenCode prompt",
     },
-    -- Built-in prompts
     {
       "<leader>ape",
       function()
@@ -108,28 +174,188 @@ return {
       mode = { "n", "x" },
       desc = " 󰮮 OpenCode optimize",
     },
+
+    -- ── Session management ────────────────────────────────────
+    {
+      "<leader>an",
+      function()
+        require("opencode").command("session.new")
+      end,
+      desc = " 󰮮 New Session",
+    },
+    {
+      "<leader>al",
+      function()
+        tui_send("\x18l")
+      end,
+      desc = " 󰮮 Select Session (Ctrl+X L)",
+    },
+    {
+      "<leader>au",
+      function()
+        require("opencode").command("session.undo")
+      end,
+      desc = " 󰮮 Undo último mensaje",
+    },
+    {
+      "<leader>ar",
+      function()
+        require("opencode").command("session.redo")
+      end,
+      desc = " 󰮮 Redo acción",
+    },
+    {
+      "<leader>ax",
+      function()
+        require("opencode").command("session.interrupt")
+      end,
+      desc = " 󰮮 Interrupt / Detener opencode",
+    },
+    {
+      "<leader>ak",
+      function()
+        require("opencode").command("session.compact")
+      end,
+      desc = " 󰮮 Compact / Reducir contexto",
+    },
+    {
+      "<leader>ac",
+      function()
+        tui_send("/share\n")
+      end,
+      mode = { "n", "x" },
+      desc = " 󰮮 Share session (link)",
+    },
+    {
+      "<leader>aF",
+      function()
+        tui_send("/fork\n")
+      end,
+      mode = { "n", "x" },
+      desc = " 󰮮 Fork session (desde este punto)",
+    },
+
+    -- ── Focus TUI terminal ───────────────────────────────────
+    {
+      "<leader>af",
+      function()
+        local bufs = vim.api.nvim_list_bufs()
+        for i = 1, #bufs do
+          if vim.bo[bufs[i]].buftype == "terminal" then
+            local name = vim.api.nvim_buf_get_name(bufs[i])
+            if name:match("opencode") then
+              local win = vim.fn.bufwinid(bufs[i])
+              if win ~= -1 then
+                vim.api.nvim_set_current_win(win)
+                vim.cmd("startinsert")
+                return
+              end
+            end
+          end
+        end
+        require("opencode").toggle()
+      end,
+      desc = " 󰮮 Focus TUI terminal Opencode",
+    },
+
+    -- ── Model / Provider selector ────────────────────────────
+    {
+      "<leader>am",
+      function()
+        tui_send("\x18m")
+      end,
+      desc = " 󰮮 Select Model (Ctrl+X M)",
+    },
+
+    -- ── Menú de prompts (desde gemini-keys) ───────────────────
+    {
+      "<leader>ag",
+      function()
+        local options = {
+          "   Revisar código",
+          "  󱜨 Explicar código",
+          "   Debuggear error",
+          "  󰈏 Refactorizar",
+          "  󰓅 Optimizar",
+          "   󱋑 Personalizado",
+        }
+        local prompts = {
+          "Revisa este código y sugiere mejoras:",
+          "Explica este código paso a paso:",
+          "Debuggea este error:",
+          "Refactoriza este código:",
+          "Optimiza este código:",
+        }
+        vim.ui.select(options, {
+          prompt = " 󰊭 ~ Acción Opencode:",
+        }, function(choice, idx)
+          if not choice then
+            return
+          end
+          if idx == 6 then
+            vim.ui.input({ prompt = "Tu prompt: " }, function(input)
+              if input and input ~= "" then
+                require("opencode").ask("@this: " .. input, { submit = true })
+              end
+            end)
+          else
+            require("opencode").ask("@this: " .. prompts[idx], { submit = true })
+          end
+        end)
+      end,
+      mode = { "n", "x" },
+      desc = " 󰮮 Menú de prompts Opencode",
+    },
   },
+
   config = function()
     ---@type opencode.Opts
     vim.g.opencode_opts = {
-      -- Your configuration, if any — see `lua/opencode/config.lua`, or "goto definition" on the type or field.
       providers = {
         anthropic = {
-          -- auth_type = "max",  --   Opencode SOLO  funciona con API KEYS
-          api_key_cmd = "echo $ANTHROPIC_API_KEY", -- 🔥 Cambiar ESTO
+          api_key_cmd = "echo $ANTHROPIC_API_KEY",
           model = "claude-sonnet-4-20250514",
+        },
+        gemini = {
+          auth_type = "oauth",
+          model = "gemini-2.5-pro",
+          models = {
+            ["gemini-2.5-pro"] = {
+              options = {
+                thinkingConfig = {
+                  thinkingBudget = 8192,
+                  includeThoughts = true,
+                },
+              },
+            },
+          },
         },
       },
       default_provider = "anthropic",
     }
 
-    -- Required for `opts.events.reload`.
     vim.o.autoread = true
 
-    -- Recommended/example keymaps.
+    -- ── Inputs flotantes: limpios, sin autocompletado ──
+    local function clean_input()
+      vim.b.cmp_enabled = false
+      vim.b.blink_cmp_enabled = false
+      vim.keymap.set("i", "<Esc>", "<Esc>", { buffer = true, desc = "Exit insert mode" })
+      vim.keymap.set("i", "<C-BS>", "<C-W>", { buffer = true, desc = "Delete prev word" })
+    end
+    vim.api.nvim_create_autocmd("InsertEnter", {
+      callback = function(args)
+        local ft = vim.bo[args.buf].filetype
+        if ft == "opencode_ask" or ft == "AvanteAsk" or ft == "AvanteInput" then
+          clean_input()
+        end
+      end,
+    })
+
+    -- ── Keymaps globales ──────────────────────────────────────
     vim.keymap.set({ "n", "x" }, "<C-a>", function()
       require("opencode").ask("@this: ", { submit = true })
-    end, { desc = " 󰮮 Ask opencode… " })
+    end, { desc = " 󰮮 Ask opencode…" })
     vim.keymap.set({ "n", "x" }, "<C-x>", function()
       require("opencode").select()
     end, { desc = " 󰮮 Execute opencode action…" })
@@ -150,9 +376,5 @@ return {
     vim.keymap.set("n", "<S-C-d>", function()
       require("opencode").command("session.half.page.down")
     end, { desc = " 󰮮 Scroll opencode down" })
-
-    -- You may want these if you stick with the opinionated "<C-a>" and "<C-x>" above — otherwise consider "<leader>o…".
-    vim.keymap.set("n", "+", "<C-a>", { desc = " 󰮮 Increment under cursor", noremap = true })
-    vim.keymap.set("n", "-", "<C-x>", { desc = " 󰮮 Decrement under cursor", noremap = true })
   end,
 }

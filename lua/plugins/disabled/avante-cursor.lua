@@ -33,9 +33,9 @@ return {
       -- feature n1: Auto-switch a Ollama (provider gratuito por defecto)
       -- 🎮 Usa :AvanteSwitchProvider <provider>
       -- Providers: claude, ollama, gemini, deepseek, openrouter, copilot
-      vim.defer_fn(function()
-        pcall(vim.cmd, "silent! AvanteSwitchProvider claude")
-      end, 500)
+      -- vim.defer_fn(function()
+      --   pcall(vim.cmd, "silent! AvanteSwitchProvider claude")
+      -- end, 500)
 
       -- Temporarily move cursor away from avante during resize
       local function temporarily_leave_avante()
@@ -191,7 +191,7 @@ return {
         -- 🎯 CONFIGURACIÓN BÁSICA
         --   ---@alias Provider "claude" | "openai" | "azure" | "gemini" | "cohere" | "copilot" | string
         ---@type Provider
-        provider = "claude", -- /o ollama -- Provider por defecto
+        provider = "openrouter", -- /o ollama -- Provider por defecto (Claude roto) | Ollma era god hasta que la nacion de Openrouter llego a tumbar su suscripcion. | Openrouter 👑
         ---@alias Mode "agentic" | "legacy"
         ---@type Mode
         mode = "legacy", -- o/ agentic -- 󰄭 GEMINI, Claude, 󰄬 etc SOPORTAN agentic, OLLAMA NO 󰂭 -- The default mode for interaction. "agentic" uses tools to automatically generate code, "legacy" uses the old planning method to generate code.
@@ -209,7 +209,7 @@ return {
           ollama = {
             priority = 1,
             endpoint = "127.0.0.1:11434", -- Sin /v1
-            model = "deepseek-v3.2:cloud", -- Tu modeloAvanteSwitchProvider deepseek
+            model = "phi3:mini", -- de PAGO: "deepseek-v3.2:cloud", -- Tu modeloAvanteSwitchProvider deepseek
             timeout = 30000,
             mode = "agentic", -- ✅ CRÍTICO, "agentic" permite ejecutar BASH, legacy menos errores (tomo el riesgo).
             disable_tools = true, -- 🔥 Agregar esto
@@ -261,20 +261,17 @@ return {
             model = "claude-sonnet-4-20250514",
             timeout = 30000,
             -- ╔══════════════════════════════════════════════════════════════════════╗
-            -- EN CAMBIO USA ESTO PARA SOLO EN LINUX
+            -- DESACTIVADO: auth_type rompe snacks picker al hacer OAuth.
+            -- Si tienes suscripcion, comenta `provider` arriba y descomenta esto:
+            auth_type = "max",
             -- ╚══════════════════════════════════════════════════════════════════════╝
-            auth_type = is_linux and "max" or nil, -- NO FUNCIONA OAUTH EN WSL 💀
-            -- ╔══════════════════════════════════════════════════════════════════════╗
-            -- PARA ACTIVARLO A NIVEL GLOBAL:
-            -- auth_type = "max",
-            -- ╚══════════════════════════════════════════════════════════════════════╝
-            api_key_name = "ANTHROPIC_API_KEY", --  🔥 Desactivalo si usas suscripción  󰀦
-            mode = "agentic", -- USA Tools para Claude
-            disable_tools = true, -- 🔥 Agregar esto
+            api_key_name = "ANTHROPIC_API_KEY", -- API key como fallback
+            mode = "agentic",
+            disable_tools = true,
             -- ✅ Usar extra_request_body para evitar warnings
             extra_request_body = {
               temperature = 0.75,
-              max_tokens = 4096, -- Lo baje de 20480
+              max_tokens = 4096,
             },
           },
 
@@ -288,27 +285,36 @@ return {
           openrouter = {
             __inherited_from = "openai",
             endpoint = "https://openrouter.ai/api/v1",
-            model = "qwen/qwen3-coder:free",
+            model = "gpt-oss-120b:free", -- LIGERO:
+            -- ──────────────────────────────────────────────────────────
+            -- 🏆 MEJORES MODELOS GRATIS PARA CODING (OpenRouter)
+            -- ──────────────────────────────────────────────────────────
+            -- 1. gpt-oss-120b:free  ← 117B MoE (5.1B activos), reasoning configurable,
+            --    tool use nativo, el más polenta para código + arquitectura
+            -- 2. owl-alpha:free     ← #1 en uso (1.99T tokens), agentic, 1.05M ctx
+            -- 3. poolside/laguna-m.1:free ← especialista SWE, tool calling + reasoning
+            -- 4. moonshotai/kimi-k2.6:free ← long-horizon coding, agent swarm
+            -- 5. qwen/qwen3-coder:free ← rápido y liviano para código puro
+            -- ──────────────────────────────────────────────────────────
             mode = "legacy", -- USA Tools para OpenRouter
             disable_tools = true, -- 🔥 Agregar esto
-            -- model = "deepseek/deepseek-chat-v3-0324:free",
-            -- model = "deepseek/deepseek-r1-0528:free",
             api_key_name = "OPEN_ROUTER_API_KEY",
             timeout = 30000, -- Timeout in milliseconds
             extra_request_body = {
               temperature = 0.75,
               max_tokens = 32768,
+              reasoning = { enabled = false }, -- 🔥 Desactiva thinking mode en modelos que lo soporten
             },
           },
         },
-        cursor_applying_provider = "claude", -- "copilot", "claude", ""
-        auto_suggestions_provider = "claude", -- "copilot", "claude", ""
+        cursor_applying_provider = "openrouter", -- "copilot", "claude", ""
+        auto_suggestions_provider = "openrouter", -- "copilot", "claude", ""
         --  CONFIGURACION NUEVA EXPERIMENTAL!! 🚀 
         ---Note: This is an experimental feature and may not work as expected.
         dual_boost = {
           enabled = false,
-          first_provider = "ollama",
-          second_provider = "claude", -- "deepseek", "gemini-cli"
+          first_provider = "openrouter",
+          second_provider = "claude", -- Es de pago, OIlama es un pijaso
           -- prompt = "Based on the two reference outputs below, generate a response that incorporates elements from both but reflects your own judgment and unique perspective. Do not provide any explanation, just give the response directly. Reference Output 1: [{{provider1_output}}], Reference Output 2: [{{provider2_output}}]",
           prompt = "Habla Español,Based on the two reference outputs below, generate a response. Do not provide any explanation, just give the response. Este GPT es un clon del usuario, un arquitecto líder frontend especializado en Angular y React, con experiencia en arquitectura limpia, arquitectura hexagonal y separación de lógica en aplicaciones escalables. Tiene un enfoque técnico pero práctico, con explicaciones claras y aplicables, siempre con ejemplos útiles para desarrolladores con conocimientos intermedios y avanzados.\n\nHabla con un tono profesional pero cercano, relajado y con un toque de humor inteligente. Evita formalidades excesivas y usa un lenguaje directo, técnico cuando es necesario, pero accesible. Su estilo es argentino, sin caer en clichés, y utiliza expresiones como 'buenas acá estamos' o 'dale que va' según el contexto.\n\nSus principales áreas de conocimiento incluyen:\n- Desarrollo frontend con Angular, React y gestión de estado avanzada (Redux, Signals, State Managers propios como Gentleman State Manager y GPX-Store).\n- Arquitectura de software con enfoque en Clean Architecture, Hexagonal Architecure y Scream Architecture.\n- Implementación de buenas prácticas en TypeScript, testing unitario y end-to-end.\n- Loco por la modularización, atomic design y el patrón contenedor presentacional \n- Herramientas de productividad como LazyVim, Tmux, Zellij, OBS y Stream Deck.\n- Mentoría y enseñanza de conceptos avanzados de forma clara y efectiva.\n- Liderazgo de comunidades y creación de contenido en YouTube, Twitch y Discord.\n\nA la hora de explicar un concepto técnico:\n1. Explica el problema que el usuario enfrenta.\n2. Propone una solución clara y directa, con ejemplos si aplica.\n3. Menciona herramientas o recursos que pueden ayudar.\n\nSi el tema es complejo, usa analogías prácticas, especialmente relacionadas con construcción y arquitectura. Si menciona una herramienta o concepto, explica su utilidad y cómo aplicarlo sin redundancias.\n\nAdemás, tiene experiencia en charlas técnicas y generación de contenido. Puede hablar sobre la importancia de la introspección. Reference Output 1: [{{provider1_output}}], Reference Output 2: [{{provider2_output}}]",
           timeout = 60000, -- Timeout in milliseconds
@@ -318,7 +324,7 @@ return {
         -- 🎨 COMPORTAMIENTO
         behaviour = {
           enable_cursor_planning_mode = true,
-          auto_suggestions = false, -- Desactiva auto-sugerencias CHOCA con OLLAMA  .
+          auto_suggestions = true, -- Desactiva auto-sugerencias CHOCA con OLLAMA  .
           disable_tools = true, -- 🔥 Esto desactiva tools para TODOS los providers
           minimize_diff = true, -- ✅ Agregá esto para el minimizado de diff [RENDERIZADO]
           auto_set_highlight_group = true,
@@ -391,8 +397,9 @@ return {
             rounded = false,
           },
           input = {
+            provider = "snacks", -- ✅ Evita "native input doesn't support concealed"
             prefix = "> ",
-            height = 8, -- Height of the input window in vertical layout
+            height = 8,
           },
           edit = {
             start_insert = true, -- Start insert mode when opening the edit window

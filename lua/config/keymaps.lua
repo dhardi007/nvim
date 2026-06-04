@@ -315,6 +315,9 @@ vim.keymap.set("n", "<A-Down>", function()
   move_line("down")
 end, { desc = "Move line down" })
 
+-- ── Salir de modo terminal con ESC ─────────────────────────
+vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
+
 -- =============================
 -- NOICE CMDLINE PERSONALIZADA
 -- =============================

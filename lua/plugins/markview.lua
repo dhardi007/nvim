@@ -143,7 +143,7 @@ return {
     preview = {
       enable = true,
       -- ✅ CRÍTICO: Agregar Avante a los filetypes
-      filetypes = { "markdown", "norg", "rmd", "org", "vimwiki", "Avante", "AvanteInput" },
+      filetypes = { "markdown", "norg", "rmd", "org", "vimwiki", "Avante" },
       ignore_buftypes = {},
       ignore_previews = {},
 

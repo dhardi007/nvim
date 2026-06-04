@@ -123,8 +123,9 @@ require("config.lazy") --  .
 require("config.keymaps") --  .
 
 -- Requiere de Keymaps
-require("config.keymaps.ollama-keys") -- keymaps para LocalAI [Ollama] 󰎣 🅾️ .
-require("config.keymaps.gemini-keys") -- keymaps para Gemini AI 󰊭 .
+-- require("config.keymaps.ollama-keys") -- keymaps para LocalAI [Ollama] 󰎣 🅾️ .
+require("config.keymaps.openrouter-keys") -- keymaps para OpenRouter 󱋭 .
+-- require("config.keymaps.gemini-keys") -- keymaps para Gemini AI 󰊭 .
 require("config.keymaps.ai-termux-keys") -- keymaps para TermuxAI .
 require("config.fittencode-keys") -- Keymaps para Termux AI Autocomplete .
 require("config.keymaps.give-context") -- keymaps para utilidades IA  󰭹
