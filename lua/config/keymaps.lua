@@ -254,7 +254,7 @@ end
 
 -- Launch live-server [Space + L + ?] {Equivalente a Ctrl+O en VSCODE}
 -- Para proyectos / HTML estaticos
-keymap.set("n", "<leader>ll", ":cd %:h | term live-server<CR>", { desc = "Launch Live Server [Html Estatico]" })
+keymap.set("n", "<leader>ll", ":cd %:h | term npx serve<CR>", { desc = "Launch Live Server [Html Estatico]" })
 
 -- Para proyectos de React
 vim.keymap.set("n", "<leader>ls", ":cd %:p:h | term npm start<CR>", { desc = "React Start" })
@@ -323,3 +323,58 @@ vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 -- =============================
 vim.keymap.set("n", "<leader>nd", "<cmd>NoiceDismiss<CR>", { desc = "Dismiss Noice" }) -- Para borrar notis si se BUGEA
 vim.keymap.set("n", "<leader>M", "<cmd>MCP<CR>", { desc = "  MCP HUB" }) -- Para GESTIONAR MCPHUB
+
+-- =============================
+-- ENGRAM - Memoria persistente para IA
+-- =============================
+-- <leader>ems = save memory
+-- <leader>emc = show context
+-- <leader>emf = search memory
+-- <leader>eml = save lesson
+-- <leader>emp = save pattern
+-- <leader>emsess = save session summary
+vim.keymap.set("n", "<leader>ems", function()
+  local title = vim.fn.input("Title: ")
+  if title == "" then return end
+  local msg = vim.fn.input("Message: ")
+  if msg == "" then return end
+  vim.fn.system('engram save "' .. title .. '" "' .. msg .. '" --type lesson --project jscamp')
+  vim.notify("Saved to Engram (jscamp)")
+end, { desc = "Engram: Save memory" })
+
+vim.keymap.set("n", "<leader>eml", function()
+  local title = vim.fn.input("Lesson title: ")
+  if title == "" then return end
+  local msg = vim.fn.input("Lesson content: ")
+  if msg == "" then return end
+  vim.fn.system('engram save "Lección: ' .. title .. '" "' .. msg .. '" --type lesson --project jscamp')
+  vim.notify("Lesson saved to Engram")
+end, { desc = "Engram: Save lesson" })
+
+vim.keymap.set("n", "<leader>emp", function()
+  local title = vim.fn.input("Pattern title: ")
+  if title == "" then return end
+  local msg = vim.fn.input("Pattern description: ")
+  if msg == "" then return end
+  vim.fn.system('engram save "Patrón: ' .. title .. '" "' .. msg .. '" --type pattern --project jscamp')
+  vim.notify("Pattern saved to Engram")
+end, { desc = "Engram: Save pattern" })
+
+vim.keymap.set("n", "<leader>emsess", function()
+  local msg = vim.fn.input("Session summary: ")
+  if msg == "" then return end
+  vim.fn.system('engram save "Resumen de sesión" "' .. msg .. '" --type session-summary --project jscamp')
+  vim.notify("Session summary saved")
+end, { desc = "Engram: Save session summary" })
+
+vim.keymap.set("n", "<leader>emc", function()
+  local result = vim.fn.system('engram context --project jscamp')
+  vim.notify(result)
+end, { desc = "Engram: Show context" })
+
+vim.keymap.set("n", "<leader>emf", function()
+  local query = vim.fn.input("Search: ")
+  if query == "" then return end
+  local result = vim.fn.system('engram search "' .. query .. '" --project jscamp')
+  vim.notify(result)
+end, { desc = "Engram: Search memory" })
