@@ -30,6 +30,12 @@ return {
       { "<leader>aO", group = "🦞 ~ Abrir Clawdbot Openclawd", icon = { icon = "🦞", color = "red" } },
       -- { "<leader>af", group = " ~ Abrir AI FittenCode Autocomplete", icon = { icon = "", color = "orange" } },
       -- { "<leader>af", mode = "x", group = " ~ Abrir AI FittenCode Autocomplete", icon = { icon = "", color = "orange" } },
+      {
+        "<leader>em",
+        mode = "x",
+        group = "Engram: Memory Persistent [Opencode, AI]",
+        icon = { icon = "󰍛", color = "pink" },
+      },
       { "<leader>af", icon = { icon = "", color = "orange" } },
       { "<leader>ab", icon = { icon = "", color = "orange" } },
       { "<leader>aB", icon = { icon = "", color = "orange" } },

@@ -363,6 +363,13 @@ return {
       require("opencode").toggle()
     end, { desc = " 󰮮 Toggle opencode" })
 
+    -- <leader>ft: OpenCode en root del proyecto (git root o cwd)
+    vim.keymap.set("n", "<leader>ft", function()
+      local root = vim.fn.system("git rev-parse --show-toplevel 2>/dev/null"):gsub("\n", "")
+      if root == "" then root = vim.fn.getcwd() end
+      require("opencode").toggle({ cwd = root })
+    end, { desc = " 󰮮 OpenCode en project root" })
+
     vim.keymap.set({ "n", "x" }, "go", function()
       return require("opencode").operator("@this ")
     end, { desc = " 󰮮 Add range to opencode", expr = true })
