@@ -1,4 +1,5 @@
-local website = "https://ghaerdi.mod.land"
+-- local website = "https://ghaerdi.mod.land"
+local website = "https://github.com/dizzi1222"
 local blacklist = {
 	"nectar",
 	"server",
