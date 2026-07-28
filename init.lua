@@ -113,6 +113,7 @@ if is_windows then
   require("utils.Windows-pywal-wiwalAuto").setup() -- Auto-pywal para Windows 
 elseif is_unix then
   -- Configuración Linux/macOS
+  vim.opt.shell = vim.fn.executable("zsh") == 1 and "zsh" or "bash"
   vim.g.node_host_prog = vim.fn.exepath("node") -- toma el node del PATH
   vim.env.PATH = os.getenv("HOME") .. "/.npm-global/bin:" .. vim.env.PATH
   -- Cargar API keys desde ~/.api-keys.sh

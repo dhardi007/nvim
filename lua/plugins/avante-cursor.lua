@@ -119,11 +119,11 @@ return {
       local is_linux = vim.fn.has("unix") == 1 and not is_wsl
       local is_termux = vim.fn.isdirectory("/data/data/com.termux") == 1
 
-      -- feature n2: Detectar si faltan avante_templates y auto-build (Windows: .dll, Linux/WSL: .so)
+      -- feature n2: Verificar avante_templates compilados (Makefile los pone en lua/ no build/)
       local lib_ext = is_windows and ".dll" or ".so"
-      local templates_lib = vim.fn.stdpath("data") .. "/lazy/avante.nvim/build/avante_templates" .. lib_ext
+      local templates_lib = vim.fn.stdpath("data") .. "/lazy/avante.nvim/lua/avante_templates" .. lib_ext
       if vim.fn.filereadable(templates_lib) == 0 then
-        vim.notify("Avante templates faltantes. Compilando...", vim.log.levels.WARN)
+        vim.notify("Avante templates no encontrados. Compilando...", vim.log.levels.WARN)
         vim.defer_fn(function()
           vim.cmd("Lazy build avante.nvim")
         end, 1000)
