@@ -2,6 +2,9 @@ return {
   {
     "andweeb/presence.nvim",
     lazy = true,
+    build = function(plugin)
+      require("dizzi.presence_patch").patch_presence(plugin.dir)
+    end,
     config = function()
       require("presence"):setup({
         auto_update = true,
