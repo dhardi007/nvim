@@ -96,7 +96,7 @@ return {
 
     -- Atajos en modo Normal
     keymap("n", "<leader>cL", "<Cmd>Codeium Auth<CR>", { desc = "   🔐 Login/Autenticar Codeium " })
-    keymap("n", "<leader>aL", "<Cmd>Codeium Auth<CR>", { desc = "   🔐 Login/Autenticar Codeium " })
+    keymap("n", "<leader>al", "<Cmd>Codeium Auth<CR>", { desc = "   🔐 Login/Autenticar Codeium " })
     keymap("n", "<leader>cT", "<Cmd>Codeium Toggle<CR>", { desc = "   🔄 Toggle/Activar Codeium " })
     keymap("n", "<leader>cT", "<Cmd>Codeium Toggle<CR>", { desc = "   🔄 Activar/Toggle Codeium " })
     keymap("n", "<leader>aT", "<Cmd>Codeium Toggle<CR>", { desc = "   🔄 Toggle/Activar Codeium " })

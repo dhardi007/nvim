@@ -30,16 +30,16 @@ end, { desc = "Abrir dashboard de Snacks" })
 -- Mapear Ctrl+T y Space+A+N para {add new file} abrir una nueva pestaña - lo mismo que space + m + n
 
 -- Crear nuevo archivo desde treesitter - arbol de archivo - lo mismo que Control + Ts
-vim.keymap.set("n", "<leader>an", function()
-  local dir = vim.fn.expand("%:p:h") -- ruta del buffer actual
-  if dir == "" then
-    dir = vim.loop.cwd() -- fallback si no hay archivo
-  end
-  local name = vim.fn.input("Nombre del archivo: ")
-  if name ~= "" then
-    vim.cmd("tabnew " .. dir .. "/" .. name)
-  end
-end, { noremap = true, silent = true, desc = "  Nuevo archivo [add new file]" })
+-- vim.keymap.set("n", "<leader>an", function()
+--   local dir = vim.fn.expand("%:p:h") -- ruta del buffer actual
+--   if dir == "" then
+--     dir = vim.loop.cwd() -- fallback si no hay archivo
+--   end
+--   local name = vim.fn.input("Nombre del archivo: ")
+--   if name ~= "" then
+--     vim.cmd("tabnew " .. dir .. "/" .. name)
+--   end
+-- end, { noremap = true, silent = true, desc = "  Nuevo archivo [add new file]" })
 
 -- keymap.set("n", "<C-t>", ":tabnew<CR>", { noremap = true, silent = true })
 vim.keymap.set("n", "<C-t>", function()
@@ -249,43 +249,54 @@ function SaveFile()
 end
 
 -- =============================
--- LIVE SERVER, deploy, DOCKER 
+-- LAUNCH, BUILD, DEPLOY 
 -- =============================
 
--- Launch live-server [Space + L + ?] {Equivalente a Ctrl+O en VSCODE}
--- Para proyectos / HTML estaticos
-keymap.set("n", "<leader>ll", ":cd %:h | term live-server<CR>", { desc = "Launch Live Server [Html Estatico]" })
-
--- Para proyectos de React
-vim.keymap.set("n", "<leader>ls", ":cd %:p:h | term npm start<CR>", { desc = "React Start" })
-
--- Para DEPURAR Proyectos de Producción
-vim.keymap.set("n", "<leader>lb", ":cd %:p:h | term npm run build<CR>", { desc = "Run Build / Depurar" })
-
--- Para SERVIR Proyectos de Producción
-vim.keymap.set("n", "<leader>lv", ":cd %:p:h | term npm run serve<CR>", { desc = "Run Serve / Depurar" })
-
--- Para deployar proyectos
-vim.keymap.set("n", "<leader>ld", ":cd %:p:h | term npm run deploy<CR>", { desc = "Run Deploy" })
-
--- Launch live-server [Space + L + S] {Equivalente a Ctrl+O en VSCODE}
-keymap.set("n", "<leader>ls", function()
-  -- Verificar si live-server está instalado
-  if vim.fn.executable("live-server") == 0 then
-    vim.notify("❌ live-server no está instalado. Instala con: npm i -g live-server", vim.log.levels.ERROR)
-    return
+-- [ll] Live Server — HTML estático con autoreload
+keymap.set("n", "<leader>ll", function()
+  if vim.fn.executable("live-server") == 1 then
+    vim.cmd("cd %:h | term live-server")
+  else
+    vim.notify("❌ live-server no instalado. npm i -g live-server", vim.log.levels.WARN)
+    vim.cmd("cd %:h | term npx serve")
   end
-  vim.cmd("cd %:h | term live-server")
-end, { desc = "Launch Live Server" })
+end, { desc = "Live Server [HTML]" })
 
--- Docker Compose Up [Space + L + D]
-keymap.set("n", "<leader>ld", function()
-  -- Detectar si está en WSL
+-- [ls] Start dev server — unificado para SvelteKit, React, etc.
+keymap.set("n", "<leader>ls", function()
+  local options = {
+    { label = "vite     → pnpm run dev",   cmd = "pnpm run dev" },
+    { label = "svelte   → pnpm run dev",   cmd = "pnpm run dev" },
+    { label = "react    → pnpm start",     cmd = "pnpm start" },
+    { label = "npm      → npm run dev",    cmd = "npm run dev" },
+    { label = "next     → pnpm dev",       cmd = "pnpm dev" },
+  }
+  local labels = vim.tbl_map(function(o) return o.label end, options)
+  vim.ui.select(labels, { prompt = "Dev server:" }, function(choice, idx)
+    if choice then
+      vim.cmd("cd %:h | term " .. options[idx].cmd)
+    end
+  end)
+end, { desc = "Start Dev Server" })
+
+-- [lb] Build — pnpm run build
+keymap.set("n", "<leader>lb", ":cd %:h | term pnpm run build<CR>", { desc = "Build" })
+
+-- [lp] Preview producción — pnpm run preview
+keymap.set("n", "<leader>lp", ":cd %:h | term pnpm run preview<CR>", { desc = "Preview Build" })
+
+-- [ld] Deploy — pnpm run deploy
+keymap.set("n", "<leader>ld", ":cd %:h | term pnpm run deploy<CR>", { desc = "Deploy" })
+
+-- [li] Install — pnpm install
+keymap.set("n", "<leader>li", ":cd %:h | term pnpm install<CR>", { desc = "Install" })
+
+-- [lc] Docker Compose Up
+keymap.set("n", "<leader>lc", function()
   local is_wsl = vim.fn.has("wsl") == 1
   local docker_cmd = is_wsl and "docker.exe" or "docker"
-
   if vim.fn.executable(docker_cmd) == 0 then
-    vim.notify("❌ Docker no está instalado", vim.log.levels.ERROR)
+    vim.notify("❌ Docker no instalado", vim.log.levels.ERROR)
     return
   end
   vim.cmd("cd %:h | term " .. docker_cmd .. " compose up")
@@ -323,3 +334,74 @@ vim.keymap.set("t", "<Esc>", "<C-\\><C-n>", { desc = "Exit terminal mode" })
 -- =============================
 vim.keymap.set("n", "<leader>nd", "<cmd>NoiceDismiss<CR>", { desc = "Dismiss Noice" }) -- Para borrar notis si se BUGEA
 vim.keymap.set("n", "<leader>M", "<cmd>MCP<CR>", { desc = "  MCP HUB" }) -- Para GESTIONAR MCPHUB
+
+-- =============================
+-- ENGRAM - Memoria persistente para IA
+-- =============================
+-- <leader>ems = save memory
+-- <leader>emc = show context
+-- <leader>emf = search memory
+-- <leader>eml = save lesson
+-- <leader>emp = save pattern
+-- <leader>emsess = save session summary
+vim.keymap.set("n", "<leader>ems", function()
+  local title = vim.fn.input("Title: ")
+  if title == "" then
+    return
+  end
+  local msg = vim.fn.input("Message: ")
+  if msg == "" then
+    return
+  end
+  vim.fn.system('engram save "' .. title .. '" "' .. msg .. '" --type lesson --project jscamp')
+  vim.notify("Saved to Engram (jscamp)")
+end, { desc = "Engram: Save memory" })
+
+vim.keymap.set("n", "<leader>eml", function()
+  local title = vim.fn.input("Lesson title: ")
+  if title == "" then
+    return
+  end
+  local msg = vim.fn.input("Lesson content: ")
+  if msg == "" then
+    return
+  end
+  vim.fn.system('engram save "Lección: ' .. title .. '" "' .. msg .. '" --type lesson --project jscamp')
+  vim.notify("Lesson saved to Engram")
+end, { desc = "Engram: Save lesson" })
+
+vim.keymap.set("n", "<leader>emp", function()
+  local title = vim.fn.input("Pattern title: ")
+  if title == "" then
+    return
+  end
+  local msg = vim.fn.input("Pattern description: ")
+  if msg == "" then
+    return
+  end
+  vim.fn.system('engram save "Patrón: ' .. title .. '" "' .. msg .. '" --type pattern --project jscamp')
+  vim.notify("Pattern saved to Engram")
+end, { desc = "Engram: Save pattern" })
+
+vim.keymap.set("n", "<leader>emsess", function()
+  local msg = vim.fn.input("Session summary: ")
+  if msg == "" then
+    return
+  end
+  vim.fn.system('engram save "Resumen de sesión" "' .. msg .. '" --type session-summary --project jscamp')
+  vim.notify("Session summary saved")
+end, { desc = "Engram: Save session summary" })
+
+vim.keymap.set("n", "<leader>emc", function()
+  local result = vim.fn.system("engram context --project jscamp")
+  vim.notify(result)
+end, { desc = "Engram: Show context" })
+
+vim.keymap.set("n", "<leader>emf", function()
+  local query = vim.fn.input("Search: ")
+  if query == "" then
+    return
+  end
+  local result = vim.fn.system('engram search "' .. query .. '" --project jscamp')
+  vim.notify(result)
+end, { desc = "Engram: Search memory" })
