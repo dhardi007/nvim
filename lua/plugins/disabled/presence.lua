@@ -1,7 +1,11 @@
 return {
   {
     "andweeb/presence.nvim",
-    lazy = true,
+    enabled = false, -- OFF real: se usa cord.nvim (mismo client_id). OJO: LazyVim SI importa plugins/disabled/
+    event = "VeryLazy", -- antes: lazy=true sin trigger => nunca cargaba (sin boton GitHub)
+    build = function(plugin)
+      require("dizzi.presence_patch").patch_presence(plugin.dir)
+    end,
     config = function()
       require("presence"):setup({
         auto_update = true,

@@ -30,7 +30,7 @@ M.patch_presence = function(dir)
       if l:find("autocmd BufAdd %* lua package.loaded.presence:handle_buf_add%(%)") then
         out[#out + 1] = "            \" [dizzi patch] Terminal focus: clicking/focusing a term:// job"
         out[#out + 1] = "            \" enters mode 't', which fires no BufEnter. Auto-reapplied by build."
-        out[#out + 1] = "            autocmd ModeChanged *:t,t:* * lua package.loaded.presence:handle_buf_enter()"
+        out[#out + 1] = "            autocmd ModeChanged *:t,t:* lua package.loaded.presence:handle_buf_enter()"
       end
     end
     write(vim_f, out)
