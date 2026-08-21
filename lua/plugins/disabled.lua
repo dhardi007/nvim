@@ -61,12 +61,12 @@ return {
   -- 󰙯 Discord Presence plugin's for Neovim  .
   {
     "andweeb/presence.nvim",
-    enabled = true, -- Este es funcional
+    enabled = false, -- Este es funcional
   },
-  -- {
-  --   "vyfor/cord.nvim",
-  --   enabled = false,
-  -- },
+  {
+    "vyfor/cord.nvim",
+    enabled = true,
+  },
 
   { "folke/snacks.nvim", enabled = true }, -- SI NEOVIM / LAZY / UI FALLA, DESACtIVA ESTO.
   -- 󰮮 Opencode AI Plugins for Neovim 

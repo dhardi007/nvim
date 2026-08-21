@@ -123,9 +123,14 @@ end
 
 return {
   "vyfor/cord.nvim",
-  build = ":Cord update",
+  build = function(plugin)
+    vim.cmd("Cord update")
+    require("dizzi.cord_patch").patch_cord(plugin.dir or plugin.to)
+  end,
   event = "VeryLazy",
   init = function()
+    -- defer_startup: conecta al primer evento UI en vez de al import (igual auto-conecta).
+    -- Cord es el UNICO RP activo; presence esta en plugins/disabled/ con enabled=false.
     vim.g.cord_defer_startup = true
   end,
   opts = function()
