@@ -180,9 +180,6 @@ return {
             return opts.repo_url and "View Repository" or "My Website"
           end,
           url = function(opts)
-            if opts.is_idle then
-              return
-            end
             if is_blacklisted(opts) then
               return website
             end
