@@ -310,11 +310,37 @@ return {
 
   config = function()
     ---@type opencode.Opts
+    -- Solo levantar un servidor opencode si NO hay ninguno escuchando en el
+    -- puerto. Sin esto, cada toggle/ask sin terminal abierta spawns OTRO
+    -- `opencode --port`, se acumulan procesos huérfanos y el puerto se satura
+    -- -> el envío del buffer falla ("solo funciona 1 vez y luego mas nunca").
+    local function server_running()
+      -- comprobar si algo responde el endpoint del server
+      local ok = vim.fn.system(
+        "curl -sf -m 2 -o /dev/null http://localhost:4096/" .. (vim.fn.exists("*systemlist") and "" or "")
+      )
+      return vim.v.shell_error == 0 and ok == ""
+    end
+
     vim.g.opencode_opts = {
       server = {
         url = "http://localhost:4096",
+        -- si ya hay un server en 4096, abrir solo la terminal (no spawnar otro)
         start = function()
-          vim.cmd("vsplit term://opencode --port | wincmd p")
+          if server_running() then
+            -- server ya activo: solo abrir la terminal para el chat
+            if vim.fn.bufnr("$") ~= 0 then
+              for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+                if vim.bo[buf].buftype == "terminal" and vim.api.nvim_buf_get_name(buf):match("opencode") then
+                  return
+                end
+              end
+            end
+            vim.cmd("vsplit term://opencode | wincmd p")
+          else
+            -- ningún server activo -> levantarlo limpio en una terminal
+            vim.cmd("vsplit term://opencode --port | wincmd p")
+          end
         end,
       },
       providers = {
