@@ -311,6 +311,12 @@ return {
   config = function()
     ---@type opencode.Opts
     vim.g.opencode_opts = {
+      server = {
+        url = "http://localhost:4096",
+        start = function()
+          vim.cmd("vsplit term://opencode --port | wincmd p")
+        end,
+      },
       providers = {
         anthropic = {
           api_key_cmd = "echo $ANTHROPIC_API_KEY",
