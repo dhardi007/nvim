@@ -1,6 +1,9 @@
 # TUI Installer
 
-The Gentleman.Dots TUI Installer is a modern, interactive terminal application built with Go and [Bubbletea](https://github.com/charmbracelet/bubbletea) that guides you through the complete setup of your development environment.
+The Gentleman.Dots TUI Installer is a modern, interactive terminal application built
+with Go and
+[Bubbletea](https://github.com/charmbracelet/bubbletea) that guides you through the
+complete setup of your development environment.
 
 ## Table of Contents
 
@@ -166,7 +169,7 @@ The installer automatically detects existing configurations for:
 
 Backups are stored in your home directory with a timestamp:
 
-```
+```text
 ~/.gentleman-backup-YYYYMMDD-HHMMSS/
 ```
 
@@ -235,7 +238,7 @@ The installer includes educational content to help you understand each tool:
 
 Backups must be in your home directory with the format:
 
-```
+```text
 ~/.gentleman-backup-*
 ```
 
@@ -272,7 +275,7 @@ go test ./internal/tui/... -update
 
 ### Project Structure
 
-```
+```text
 installer/
 ├── cmd/
 │   └── gentleman-installer/

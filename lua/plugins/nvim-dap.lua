@@ -175,11 +175,6 @@ return {
         return vim.json.decode(json.json_strip_comments(str))
       end
 
-      -- Load launch configurations from .vscode/launch.json if it exists
-      if vim.fn.filereadable(".vscode/launch.json") then
-        vscode.load_launchjs()
-      end
-
       -- Function to load environment variables
       local function load_env_variables()
         local variables = {}
@@ -207,6 +202,74 @@ return {
       for _, config in pairs(dap.configurations.go or {}) do
         config.env = load_env_variables
       end
+
+      -- JS/TS launch configurations (adapter pwa-node provided by nvim-dap-vscode-js)
+      for _, language in ipairs({ "typescriptreact", "typescript", "javascript", "javascriptreact" }) do
+        dap.configurations[language] = {
+          {
+            type = "pwa-node",
+            request = "launch",
+            name = "Launch file",
+            program = "${file}",
+            cwd = "${workspaceFolder}",
+            sourceMaps = true,
+            resolveSourceMapLocations = { "${workspaceFolder}/**", "!**/node_modules/**" },
+          },
+          {
+            type = "pwa-node",
+            request = "attach",
+            name = "Attach to process",
+            processId = require("dap.utils").pick_process,
+            cwd = "${workspaceFolder}",
+            sourceMaps = true,
+          },
+          {
+            type = "pwa-chrome",
+            request = "launch",
+            name = "Launch Chrome (React/Dev)",
+            url = "http://localhost:5173",
+            webRoot = "${workspaceFolder}",
+            runtimeExecutable = "/home/diego/.nix-profile/bin/chromium",
+            sourceMaps = true,
+          },
+          {
+            type = "pwa-chrome",
+            request = "attach",
+            name = "Attach to Chrome",
+            port = 9222,
+            webRoot = "${workspaceFolder}",
+            sourceMaps = true,
+          },
+        }
+      end
+    end,
+  },
+
+  -- vscode-js-debug: official JS/TS debugger used by nvim-dap-vscode-js
+  {
+    "microsoft/vscode-js-debug",
+    lazy = true,
+    -- --ignore-scripts evita el postinstall de Playwright (necesita apt-get, no disponible).
+    -- El adapter pwa-node (depuración de Node) no requiere el navegador Chromium.
+    build = "npm install --legacy-peer-deps --ignore-scripts && npx gulp vsDebugServerBundle && mv dist out",
+    version = "1.x",
+  },
+
+  -- nvim-dap-vscode-js: nvim-dap adapter for vscode-js-debug
+  {
+    "mxsdev/nvim-dap-vscode-js",
+    lazy = true,
+    dependencies = {
+      "mfussenegger/nvim-dap",
+      "microsoft/vscode-js-debug",
+    },
+    event = "VeryLazy",
+    config = function()
+      require("dap-vscode-js").setup({
+        -- Ruta real del debugger en LazyVim (no la de packer por defecto)
+        debugger_path = vim.fn.stdpath("data") .. "/lazy/vscode-js-debug",
+        adapters = { "pwa-node", "pwa-chrome", "pwa-msedge", "node-terminal", "pwa-extensionHost" },
+      })
     end,
   },
 }

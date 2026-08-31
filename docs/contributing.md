@@ -38,7 +38,7 @@ go test ./... -v
 
 ## Project Structure
 
-```
+```text
 Gentleman.Dots/
 ├── installer/                    # Go TUI installer
 │   ├── cmd/gentleman-installer/  # Entry point
