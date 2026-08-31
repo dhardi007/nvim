@@ -116,6 +116,13 @@ elseif is_unix then
   vim.opt.shell = vim.fn.executable("zsh") == 1 and "zsh" or "bash"
   vim.g.node_host_prog = vim.fn.exepath("node") -- toma el node del PATH
   vim.env.PATH = os.getenv("HOME") .. "/.npm-global/bin:" .. vim.env.PATH
+  -- Hacer que lazygit use un wrapper con 'zsh -ic' para que cargue ~/.zshrc
+  -- (funciones como gitflow y aliases) en comandos ':' y custom commands.
+  -- Solo afecta a los procesos que nvim hereda (lazygit, terminal), no al sistema.
+  local lazygit_shell = vim.fn.expand("~/.local/bin/lazygit-shell")
+  if vim.fn.filereadable(lazygit_shell) == 1 then
+    vim.env.SHELL = lazygit_shell
+  end
   -- Cargar API keys desde ~/.api-keys.sh
   local keys_file = vim.fn.expand("~/.api-keys.sh")
   if vim.fn.filereadable(keys_file) == 1 then
