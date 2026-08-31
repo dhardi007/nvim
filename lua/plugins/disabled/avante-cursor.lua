@@ -285,7 +285,7 @@ return {
           openrouter = {
             __inherited_from = "openai",
             endpoint = "https://openrouter.ai/api/v1",
-            model = "gpt-oss-120b:free", -- LIGERO:
+            model = "nvidia/nemotron-3-super-120b-a12b", -- LIGERO:
             -- ──────────────────────────────────────────────────────────
             -- 🏆 MEJORES MODELOS GRATIS PARA CODING (OpenRouter)
             -- ──────────────────────────────────────────────────────────
@@ -302,7 +302,7 @@ return {
             timeout = 30000, -- Timeout in milliseconds
             extra_request_body = {
               temperature = 0.75,
-              max_tokens = 32768,
+              max_tokens = 4421, -- Lo baje de 8192
               reasoning = { enabled = false }, -- 🔥 Desactiva thinking mode en modelos que lo soporten
             },
           },
