@@ -53,4 +53,23 @@ return {
       },
     },
   },
+
+  -- Override del linter markdownlint-cli2 de nvim-lint.
+  -- Por defecto corre con "--" (stdin) y SIN config -> usa defaults (MD013 a 80, MD060
+  -- activo). Eso genera el montón de falsos positivos "Expected: 80" que Diego ve en
+  -- Neovim. Le pasamos --config para que use MD013:120 y MD060:false.
+  {
+    "mfussenegger/nvim-lint",
+    opts = {
+      linters = {
+        ["markdownlint-cli2"] = {
+          args = {
+            "--config",
+            vim.fn.stdpath("config") .. "/.markdownlint-cli2.jsonc",
+            "-",
+          },
+        },
+      },
+    },
+  },
 }

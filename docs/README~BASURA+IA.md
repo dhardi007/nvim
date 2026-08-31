@@ -1,144 +1,139 @@
-1. Estos .lua no son basura. 
+# Notas sobre IAs y plugins de Neovim (nota personal de Diego)
 
-2. Puedes usar estas IA [pero la mayoria son de pagos, incluso code companion y copilot chat las que uso..]  >> Por eso GEMINI-cli >>> Claude.
+1. Estos .lua no son basura.
 
-3. Muchas de estas config son redudantes, ya que usan PACKER.nvim.
+2. Puedes usar estas IA [pero la mayoría son de pago, incluso code companion y copilot
+   chat las que uso..] >> Por eso GEMINI-cli >>> Claude.
 
-4. Si, Lazyvim no es lo mismo que nvim-packer.
+3. Muchas de estas config son redundantes, ya que usan PACKER.nvim.
 
-----------------------------------------------------
-	[REDUNDANTE] { Lazyvim las incluye}
-----------------------------------------------------
+4. Sí, Lazyvim no es lo mismo que nvim-packer.
 
-~ Conform [mejor que none-ls formatter]
-~ LSP-config
-~ vim-tmux-navigator
-~ treesitter
-~ cmp
-~ marks
+---
 
-----------------------------------------------------
-	[IAS] { De Pago TODAS, por eso Gemini-cli goat}
-----------------------------------------------------
+## [REDUNDANTE] - Lazyvim las incluye
 
----------
-meh
----------
-~ Supermaven [el MEJOR autocomplete >> copilot]
-~ Tabnine [la unica gratis]
-~ Copilot [gratis por unos minutos XD]
-~ Codecompanion [Configurar IAS]
----------
-MRD
----------
+- Conform [mejor que none-ls formatter]
+- LSP-config
+- vim-tmux-navigator
+- treesitter
+- cmp
+- marks
 
-~ avante [PAGO]
-~ claude-code [PAGO]
-~ Opencode [PAGO - dogshit]
-~ gemini.lua [PAGO] ~ no confundir con gemini-cli.
+---
 
-----------------------------------------------------
-	[LORE] { +Recomendaciones}
-----------------------------------------------------
+## [IAS] - De Pago TODAS, por eso Gemini-cli goat
 
-~ treesitter.lua - Es la base de toda la navegacion y funciones de nvim [Lazyvim]
-~ CMP - Lo mismo que treesitter [Lazyvim]
-~ lsp-config - Lo mismo que treesitter [Lazyvim]
-~ fzf.lua - Busqueda, redundante [peor que snacks]
-~ telescope.lua - Lo mismo que fzf lua
-~ marks.lua - Markdown para archivos .md, ya viene incluido [Lazyvim]
-~ precognition - (solo útil aprendiendo Vim)
-~ vim-be-good - Desafio para entender vim [similar a Vim Tutorial]
-~ vim-tmux-navigator.lua - Navegar tab, En lazyvim basta vim-navigation
-~ none-ls - Formatter, LazyVim usa conform por default
-~ conform.lua - Formatter [Lazyvim]
-~ Volt + minty.lua - Selector de color raro [de NVChad]
----------
-ELIMINE si o si:
----------
-~ Harpoon - Guardar marcadores, se desactiva en lazy.lua [editor] (prefieres Grapple) 
-~ Editor - Para vistas previas de funciones [snacks ya hace esto?] 
-		󱞩 [Mas ajutes de Gentleman xd] incluye:
-		~ goto-preview - ventanas flotantes
-		~ mini.hipatterns - Resaltar colores [uso mejor colorizer]
-		~ git.nvim - Git blame (quién escribió cada línea [ya lo tengo integro]
-		
+### meh
 
-----------------------------------------------------
-	[GOD] { +what u need}
-----------------------------------------------------
+- Supermaven [el MEJOR autocomplete >> copilot]
+- Tabnine [la única gratis]
+- Copilot [gratis por unos minutos XD]
+- Codecompanion [Configurar IAS]
 
-1~ grapple - redundante PERO mejor que Harpon [activable en lazy.lua] in my books:
+### MRD
 
-Space + H + H > Abrir los marcadores
-Space + H + F > Guar a los marcores
+- avante [PAGO]
+- claude-code [PAGO]
+- Opencode [PAGO - dogshit]
+- gemini.lua [PAGO] - no confundir con gemini-cli.
 
-		󱞩 Util para acceder rapido!!
+---
 
-󰀦 Configurarlo requiere:
+## [LORE] - Recomendaciones
+
+- treesitter.lua - Es la base de toda la navegación y funciones de nvim [Lazyvim]
+- CMP - Lo mismo que treesitter [Lazyvim]
+- lsp-config - Lo mismo que treesitter [Lazyvim]
+- fzf.lua - Búsqueda, redundante [peor que snacks]
+- telescope.lua - Lo mismo que fzf lua
+- marks.lua - Markdown para archivos .md, ya viene incluido [Lazyvim]
+- precognition - (solo útil aprendiendo Vim)
+- vim-be-good - Desafío para entender vim [similar a Vim Tutorial]
+- vim-tmux-navigator.lua - Navegar tab, en lazyvim basta vim-navigation
+- none-ls - Formatter, LazyVim usa conform por default
+- conform.lua - Formatter [Lazyvim]
+- Volt + minty.lua - Selector de color raro [de NVChad]
+
+## ELIMINE si o si
+
+- Harpoon - Guardar marcadores, se desactiva en lazy.lua [editor] (prefieres Grapple)
+- Editor - Para vistas previas de funciones [snacks ya hace esto?]
+
+### Mas ajustes de Gentleman xd
+
+- goto-preview - ventanas flotantes
+- mini.hipatterns - Resaltar colores [uso mejor colorizer]
+- git.nvim - Git blame (quién escribió cada línea [ya lo tengo íntegro])
+
+---
+
+## [GOD] - what u need
+
+### 1. grapple - redundante PERO mejor que Harpon [activable en lazy.lua]
+
+- `Space + H + H` > Abrir los marcadores
+- `Space + H + F` > Guardar a los marcadores
+
+Util para acceso rápido!! Configurarlo requiere:
 
 1. Instalar adaptadores específicos por lenguaje (ej: vscode-js-debug para JavaScript)
-2. Configurar cada lenguaje en tu nvim-dap.lua		
-		
----------------------------
-2~ multi-line (útil para formateo rápido)
+2. Configurar cada lenguaje en tu nvim-dap.lua
 
-	󱞩 Util para objetos, arrays, parametros de funciones... TS, JS.
-	
-	~ Atajos típicos:
-	
-gS - Split (dividir en múltiples líneas)
-gJ - Join (juntar en una línea)
-	
----------------------------
-3~ nvim-dap (si debuggeas, si no ELIMÍNALO)
+### 2. multi-line (útil para formateo rápido)
 
-Space + D + B > Para poner breakpoints
+Util para objetos, arrays, parámetros de funciones... TS, JS.
 
-󱞩 ¿Lo necesitas? Solo si debuggeas código regularmente. Si usas console.log() para todo, no lo necesitas. Si trabajas con bugs complejos o backend, es muy útil.
+- `gS` - Split (dividir en múltiples líneas)
+- `gJ` - Join (juntar en una línea)
 
-		~ Atajos típicos:
-		
-      󱞩 <F5> - Iniciar/continuar debugging
-	<F10> - Step over (siguiente línea)
-	<F11> - Step into (entrar en función)
-	<leader>db - Toggle breakpoint
+### 3. nvim-dap (si debuggeas, si no ELIMÍNALO)
 
----------------------------
-4~ ~ numb.lua - detalle menor PERO VISTA PREVIA GOD
+- `Space + D + B` > Para poner breakpoints
 
-Solo basta con :50 [el numero] y vista previa de esa linea.
+¿Lo necesitas? Solo si debuggeas código regularmente. Si usas console.log() para todo,
+no lo necesitas. Si trabajas con bugs complejos o backend, es muy útil.
 
----------------------------
-5~ inline-fold - Para colapsar imports muy largos
+- `<F5>` - Iniciar/continuar debugging
+- `<F10>` - Step over (siguiente línea)
+- `<F11>` - Step into (entrar en función)
+- `<leader>db` - Toggle breakpoint
 
----------------------------
-6~ screenkey - solo para screencasts 
-	
-	󱞩 Muestra la tecla que presionas en la status bar, util para tutoriales, muy lindo
+### 4. numb.lua - detalle menor PERO VISTA PREVIA GOD
 
----------------------------
-7~ comment - Util para manejar comentarios
+Solo basta con `:50` [el número] y vista previa de esa línea.
 
----------------------------
-8~ indent_blankline - Identacion visual hermosa (visual útil)
- 
-	󱞩 Ej:
-		function ejemplo() {
-	│ if (condicion) {
-	│ │ const valor = 10;
-	│ │ if (otraCondicion) {
-	│ │ │ console.log(valor);
-	│ │ }
-	│ }
-	}
-	
----------------------------
-9 ~ Markdown - Render markdown para .md
-			
-		󱞩 Ej:
-			① Mi Título
-		② Subtítulo
-		● Item 1
-		● Item 2
-		negrita cursiva (con estilos visuales)
+### 5. inline-fold - Para colapsar imports muy largos
+
+### 6. screenkey - solo para screencasts
+
+Muestra la tecla que presionas en la status bar, útil para tutoriales, muy lindo.
+
+### 7. comment - Util para manejar comentarios
+
+### 8. indent_blankline - Indentación visual hermosa
+
+Ej:
+
+```text
+function ejemplo() {
+│ if (condicion) {
+│ │ const valor = 10;
+│ │ if (otraCondicion) {
+│ │ │ console.log(valor);
+│ │ }
+│ }
+}
+```
+
+### 9. Markdown - Render markdown para .md
+
+Ej:
+
+```text
+① Mi Título
+② Subtítulo
+● Item 1
+● Item 2
+negrita cursiva (con estilos visuales)
+```

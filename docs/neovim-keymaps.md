@@ -22,7 +22,7 @@ Complete reference of all keybindings configured in Gentleman.Dots Neovim setup.
   - [LSP & Code Navigation](#lsp--code-navigation)
 - [Search Commands](#search-commands)
 - [Git Integration](#git-integration)
-- [AI Assistants](#ai-assistants-copilot--opencode)
+- [AI Assistants](#ai-assistants-copilot--opencode--tabnine)
 - [Obsidian Notes](#obsidian-notes)
 - [Tmux Navigation](#tmux-navigation)
 - [Buffers & Tabs](#buffers--tabs)
@@ -139,7 +139,7 @@ Oil es un editor de directorio. Algunos trucos:
 
 Para activar/desactivar IAs, modifica estos archivos:
 
-```
+```text
 ~/.config/nvim/lua/
 ├── plugins/
 │   ├── init.lua              ← Habilitar/deshabilitar plugins

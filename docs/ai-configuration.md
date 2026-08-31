@@ -1,8 +1,13 @@
 # AI Configuration for Neovim
 
-> ℹ️ **Update (January 2026)**: OpenCode now supports Claude Max/Pro subscriptions via the `opencode-anthropic-auth` plugin (included in this config). Both Claude Code and OpenCode work with your Claude subscription. *Note: This workaround is stable for now, but Anthropic could block it in the future.*
+> ℹ️ **Update (January 2026)**: OpenCode now supports Claude Max/Pro subscriptions
+> via the `opencode-anthropic-auth` plugin (included in this config). Both Claude
+> Code and OpenCode work with your Claude subscription. *Note: This workaround is
+> stable for now, but Anthropic could block it in the future.*
 
-This configuration includes several AI assistants integrated with Neovim. By default, **Claude Code is enabled** as the primary AI assistant with the custom Gentleman personality.
+This configuration includes several AI assistants integrated with Neovim. By default,
+**Claude Code is enabled** as the primary AI assistant with the custom Gentleman
+personality.
 
 ## Table of Contents
 
@@ -147,7 +152,7 @@ The Gentleman persona is a Senior Architect with 15+ years of experience. Both C
 
 ### Configuration Location
 
-```
+```text
 ~/.claude/
 ├── CLAUDE.md              # Global instructions
 ├── settings.json          # Settings and permissions
@@ -163,7 +168,9 @@ The Gentleman persona is a Senior Architect with 15+ years of experience. Both C
 
 ### Gentleman Theme (Visual Colors)
 
-Claude Code supports custom color themes via [tweakcc](https://github.com/Piebald-AI/tweakcc). The Gentleman theme provides Kanagawa-inspired colors.
+Claude Code supports custom color themes via
+[tweakcc](https://github.com/Piebald-AI/tweakcc). The Gentleman theme provides
+Kanagawa-inspired colors.
 
 **Installation:**
 
@@ -187,7 +194,8 @@ jq '.settings.selectedTheme = "gentleman"' ~/.tweakcc/config.json > tmp.json && 
 npx tweakcc --apply
 ```
 
-> ⚠️ **After Claude Code updates:** Tweakcc patches Claude Code's CLI directly. Re-apply after updates with `npx tweakcc --apply`
+> ⚠️ **After Claude Code updates:** Tweakcc patches Claude Code's CLI directly.
+> Re-apply after updates with `npx tweakcc --apply`
 
 **Theme Colors:**
 
@@ -216,7 +224,10 @@ The config includes 40+ custom "thinking" messages:
 
 OpenCode is installed automatically with a custom **Gentleman** agent and theme.
 
-> ✅ **Claude Max/Pro Support**: OpenCode supports Claude subscriptions via the `opencode-anthropic-auth` plugin, already configured in `GentlemanOpenCode/opencode.json`. Just run `opencode` and authenticate with your Claude account.
+> ✅ **Claude Max/Pro Support**: OpenCode supports Claude subscriptions via the
+> `opencode-anthropic-auth` plugin, already configured in
+> `GentlemanOpenCode/opencode.json`. Just run `opencode` and authenticate with your
+> Claude account.
 
 ### Using the Gentleman Agent
 
@@ -268,7 +279,8 @@ Example configuration:
 
 ### OpenCode Theme
 
-The configuration includes a custom **Gentleman** theme with a dark background and Kanagawa-inspired colors. The theme is automatically applied when you run OpenCode.
+The configuration includes a custom **Gentleman** theme with a dark background and
+Kanagawa-inspired colors. The theme is automatically applied when you run OpenCode.
 
 ### MCP Integrations
 

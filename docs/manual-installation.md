@@ -1,6 +1,8 @@
 # Manual Installation Guide
 
-This guide walks you through manually setting up your development environment with Gentleman.Dots. Use this if you prefer full control over each step or if the automatic installer doesn't work for your setup.
+This guide walks you through manually setting up your development environment with
+Gentleman.Dots. Use this if you prefer full control over each step or if the
+automatic installer doesn't work for your setup.
 
 ## Table of Contents
 
@@ -117,6 +119,7 @@ Copy-Item -Path .wezterm.lua -Destination $HOME
 ```
 
 If WezTerm doesn't pick up the config:
+
 - Create `C:\Users\your-username\.config\wezterm`
 - Copy `.wezterm.lua` to `wezterm.lua` inside that directory
 - Restart WezTerm
@@ -170,7 +173,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 
-#### macOS
+#### macOS (Rust install)
 
 ```bash
 xcode-select --install
@@ -191,7 +194,7 @@ unzip ~/.local/share/fonts/Iosevka.zip -d ~/.local/share/fonts/
 fc-cache -fv
 ```
 
-#### macOS
+#### macOS (Iosevka font)
 
 ```bash
 brew install --cask font-iosevka-term-nerd-font

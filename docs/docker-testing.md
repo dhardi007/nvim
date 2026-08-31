@@ -40,14 +40,14 @@ docker run -it --rm gentleman-test
 
 If you've already built the image and want to test a newer version:
 
-**Option 1: Rebuild from scratch (recommended)**
+### Option 1: Rebuild from scratch (recommended)
 
 ```bash
 docker build -f Dockerfile.test -t gentleman-test --no-cache .
 docker run -it --rm gentleman-test
 ```
 
-**Option 2: Update inside running container**
+### Option 2: Update inside running container
 
 ```bash
 docker run -it --rm gentleman-test bash
