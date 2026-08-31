@@ -203,15 +203,23 @@ return {
         config.env = load_env_variables
       end
 
-      -- JS/TS launch configurations (adapter pwa-node provided by nvim-dap-vscode-js)
+      -- JS/TS launch configurations (adapter pwa-node con puerto fijo)
       for _, language in ipairs({ "typescriptreact", "typescript", "javascript", "javascriptreact" }) do
         dap.configurations[language] = {
           {
             type = "pwa-node",
             request = "launch",
             name = "Launch file",
-            program = "${file}",
-            cwd = "${workspaceFolder}",
+            -- Ruta ABSOLUTA del buffer actual. Usar "${file}" relativiza a
+            -- ../../tmp/... y el breakpoint no casa (sesión "running" que nunca
+            -- pausa). Con program = función que devuelve expand("%:p") node
+            -- ejecuta EXACTAMENTE el archivo donde está el breakpoint.
+            program = function()
+              return vim.fn.expand("%:p")
+            end,
+            cwd = function()
+              return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
+            end,
             sourceMaps = true,
             resolveSourceMapLocations = { "${workspaceFolder}/**", "!**/node_modules/**" },
           },
@@ -242,10 +250,28 @@ return {
           },
         }
       end
+
+      -- Adapters pwa-* para vscode-js-debug.
+      -- vsDebugServer.js NO habla por stdio: escucha en un puerto TCP y lo imprime
+      -- en stdout (ej. "53397"). Leer ese stdout (como hace nvim-dap-vscode-js) es
+      -- frágil: si el puerto llega con texto extra, nvim-dap lo rechaza con
+      -- "adapter.port is required for server adapter". Solución robusta: el binario
+      -- ACEPTA el puerto como ARGUMENTO POSICIONAL (`node vsDebugServer.js 53700`
+      -- -> "Listening at :::53700"), así que lo arrancamos como job con puerto FIJO
+      -- y registramos los adapters como `server` con ese port => `adapter.port`
+      -- siempre es un número y nunca falla.
+      local port = 53700
+      local debugger_bin = vim.fn.stdpath("data") .. "/lazy/vscode-js-debug/out/src/vsDebugServer.js"
+      vim.fn.jobstart({ "node", debugger_bin, tostring(port) }, { detach = true })
+
+      dap.adapters["pwa-node"] = { type = "server", host = "127.0.0.1", port = port }
+      dap.adapters["pwa-chrome"] = dap.adapters["pwa-node"]
+      dap.adapters["pwa-msedge"] = dap.adapters["pwa-node"]
+      dap.adapters["node-terminal"] = dap.adapters["pwa-node"]
     end,
   },
 
-  -- vscode-js-debug: official JS/TS debugger used by nvim-dap-vscode-js
+  -- vscode-js-debug: official JS/TS debugger
   {
     "microsoft/vscode-js-debug",
     lazy = true,
@@ -253,23 +279,5 @@ return {
     -- El adapter pwa-node (depuración de Node) no requiere el navegador Chromium.
     build = "npm install --legacy-peer-deps --ignore-scripts && npx gulp vsDebugServerBundle && mv dist out",
     version = "1.x",
-  },
-
-  -- nvim-dap-vscode-js: nvim-dap adapter for vscode-js-debug
-  {
-    "mxsdev/nvim-dap-vscode-js",
-    lazy = true,
-    dependencies = {
-      "mfussenegger/nvim-dap",
-      "microsoft/vscode-js-debug",
-    },
-    event = "VeryLazy",
-    config = function()
-      require("dap-vscode-js").setup({
-        -- Ruta real del debugger en LazyVim (no la de packer por defecto)
-        debugger_path = vim.fn.stdpath("data") .. "/lazy/vscode-js-debug",
-        adapters = { "pwa-node", "pwa-chrome", "pwa-msedge", "node-terminal", "pwa-extensionHost" },
-      })
-    end,
   },
 }
