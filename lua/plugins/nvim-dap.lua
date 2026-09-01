@@ -162,9 +162,14 @@ return {
         return vim.fn.getcwd()
       end
 
-      -- Load mason-nvim-dap if available
+      -- Load mason-nvim-dap if available, disabling auto-handler for js-debug-adapter to prevent adapter override
       if LazyVim.has("mason-nvim-dap.nvim") then
-        require("mason-nvim-dap").setup(LazyVim.opts("mason-nvim-dap.nvim"))
+        local opts = LazyVim.opts("mason-nvim-dap.nvim") or {}
+        opts.handlers = opts.handlers or {}
+        -- "js" es el dap source name en mason-nvim-dap para js-debug-adapter.
+        -- No-op handler evita que mason-nvim-dap sobrescriba los adaptadores pwa-* nativos.
+        opts.handlers["js"] = function() end
+        require("mason-nvim-dap").setup(opts)
       end
 
       -- Set highlight for DapStoppedLine
@@ -214,20 +219,16 @@ return {
         config.env = load_env_variables
       end
 
-      -- JS/TS launch configurations (adapters pwa-* los provee nvim-dap-vscode-js)
+      -- JS/TS launch configurations
       for _, language in ipairs({ "typescriptreact", "typescript", "javascript", "javascriptreact" }) do
-        dap.configurations[language] = {
+        local configs = {
           {
             type = "pwa-node",
             request = "launch",
             name = "Launch file",
             -- Patron ESTANDAR pwa-node: `program` = archivo a ejecutar +
             -- `stopOnEntry = true` pausa en la 1ra linea, dejando que el debugger
-            -- (vscode-js-debug) inicie la sesion (NO usar --inspect-brk en
-            -- runtimeArgs: eso hace attach al inspector y rompe el "stopped
-            -- thread" -> "No stopped threads. Cannot move").
-            -- Ruta ABSOLUTA del buffer actual (expand("%:p")) para que el
-            -- breakpoint case en el archivo exacto que se ejecuta.
+            -- (vscode-js-debug) inicie la sesion.
             program = function()
               return vim.fn.expand("%:p")
             end,
@@ -246,10 +247,10 @@ return {
             cwd = "${workspaceFolder}",
             sourceMaps = true,
           },
-          -- TS directo con NODE NATIVO (Node >= 23.6 ejecuta .ts por type
-          -- stripping, sin tsx ni compilacion). Solo se registra para
-          -- typescript / typescriptreact (no para JS puro).
-          (language == "typescript" or language == "typescriptreact") and {
+        }
+
+        if language == "typescript" or language == "typescriptreact" then
+          table.insert(configs, {
             type = "pwa-node",
             request = "launch",
             name = "Launch TS",
@@ -262,7 +263,10 @@ return {
             stopOnEntry = true,
             sourceMaps = true,
             resolveSourceMapLocations = { "${workspaceFolder}/**", "!**/node_modules/**" },
-          } or nil,
+          })
+        end
+
+        vim.list_extend(configs, {
           {
             type = "pwa-chrome",
             request = "launch",
@@ -280,9 +284,6 @@ return {
             webRoot = "${workspaceFolder}",
             sourceMaps = true,
           },
-          -- Jest: patron oficial del README de nvim-dap-vscode-js. Requiere jest
-          -- en el proyecto (./node_modules/jest/bin/jest.js). --runInBand evita
-          -- paralelismo (mas simple para debug).
           {
             type = "pwa-node",
             request = "launch",
@@ -298,7 +299,6 @@ return {
             internalConsoleOptions = "neverOpen",
             sourceMaps = true,
           },
-          -- Mocha: idem, del README oficial.
           {
             type = "pwa-node",
             request = "launch",
@@ -313,7 +313,9 @@ return {
             internalConsoleOptions = "neverOpen",
             sourceMaps = true,
           },
-        }
+        })
+
+        dap.configurations[language] = configs
       end
 
       -- ══════════════════════════════════════════════════════════
@@ -352,7 +354,7 @@ return {
           port = "${port}",
           executable = {
             command = node_bin,
-            args = { js_debug_server, "${port}" },
+            args = { js_debug_server, "${port}", "127.0.0.1" },
           },
         }
       end
