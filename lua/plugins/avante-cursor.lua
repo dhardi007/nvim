@@ -285,7 +285,7 @@ return {
           openrouter = {
             __inherited_from = "openai",
             endpoint = "https://openrouter.ai/api/v1",
-            model = "nvidia/nemotron-3-super-120b-a12b", -- LIGERO:
+            model = "cohere/north-mini-code:free", -- "nvidia/nemotron-3-super-120b-a12b", -- LIGERO:
             -- ──────────────────────────────────────────────────────────
             -- 🏆 MEJORES MODELOS GRATIS PARA CODING (OpenRouter)
             -- ──────────────────────────────────────────────────────────

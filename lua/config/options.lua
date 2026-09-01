@@ -1,5 +1,21 @@
 local opt = vim.opt
 
+-- JAVA_HOME: jdtls (LSP/DAP de Java) necesita un JAVA_HOME bien formado para
+-- resolver el ejecutable de Java. En NixOS el JDK vive en /nix/store/.../lib/
+-- openjdk (layout no estándar) y JAVA_HOME suele estar vacío, lo que tira
+-- "Could not resolve java executable: Index 1 out of bounds for length 1".
+-- Se resuelve el home a partir de `java` (dir que contiene bin/java).
+if vim.env.JAVA_HOME == nil or vim.env.JAVA_HOME == "" then
+  local java_bin = vim.fn.exepath("java")
+  if java_bin ~= "" then
+    local resolved = vim.fn.resolve(java_bin)
+    local home = vim.fn.fnamemodify(vim.fn.fnamemodify(resolved, ":h"), ":h")
+    if vim.fn.isdirectory(home .. "/bin") == 1 then
+      vim.env.JAVA_HOME = home
+    end
+  end
+end
+
 -- set termguicolors
 opt.termguicolors = true
 

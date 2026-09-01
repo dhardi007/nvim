@@ -71,6 +71,11 @@ require("lazy").setup({
     -- Debgugging plugins
     { import = "lazyvim.plugins.extras.dap.core" },
 
+    -- Java DAP: nvim-jdtls + jdtls LSP. El bundle java-debug-adapter se carga
+    -- DENTRO de jdtls (runtime OSGi) via jdtls.setup_dap(); no es un .jar lanzable
+    -- standalone. Requiere: :MasonInstall jdtls (y JDK instalado).
+    { import = "lazyvim.plugins.extras.lang.java" },
+
     -- Formatting plugins
     { import = "lazyvim.plugins.extras.lang.typescript.biome" },
     { import = "lazyvim.plugins.extras.formatting.prettier" },

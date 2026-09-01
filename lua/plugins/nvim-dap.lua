@@ -151,6 +151,17 @@ return {
     config = function()
       local dap = require("dap")
 
+      -- Directorio del archivo actual (no getcwd). Debe definirse ANTES de
+      -- usarse: las configs C# (program/preflight) y los hints lo llaman y en
+      -- Lua una local function solo es visible DESPUES de su declaracion.
+      local function buf_dir()
+        local f = vim.fn.expand("%:p")
+        if f ~= "" then
+          return vim.fn.fnamemodify(f, ":h")
+        end
+        return vim.fn.getcwd()
+      end
+
       -- Load mason-nvim-dap if available
       if LazyVim.has("mason-nvim-dap.nvim") then
         require("mason-nvim-dap").setup(LazyVim.opts("mason-nvim-dap.nvim"))
@@ -203,23 +214,27 @@ return {
         config.env = load_env_variables
       end
 
-      -- JS/TS launch configurations (adapter pwa-node con puerto fijo)
+      -- JS/TS launch configurations (adapters pwa-* los provee nvim-dap-vscode-js)
       for _, language in ipairs({ "typescriptreact", "typescript", "javascript", "javascriptreact" }) do
         dap.configurations[language] = {
           {
             type = "pwa-node",
             request = "launch",
             name = "Launch file",
-            -- Ruta ABSOLUTA del buffer actual. Usar "${file}" relativiza a
-            -- ../../tmp/... y el breakpoint no casa (sesión "running" que nunca
-            -- pausa). Con program = función que devuelve expand("%:p") node
-            -- ejecuta EXACTAMENTE el archivo donde está el breakpoint.
+            -- Patron ESTANDAR pwa-node: `program` = archivo a ejecutar +
+            -- `stopOnEntry = true` pausa en la 1ra linea, dejando que el debugger
+            -- (vscode-js-debug) inicie la sesion (NO usar --inspect-brk en
+            -- runtimeArgs: eso hace attach al inspector y rompe el "stopped
+            -- thread" -> "No stopped threads. Cannot move").
+            -- Ruta ABSOLUTA del buffer actual (expand("%:p")) para que el
+            -- breakpoint case en el archivo exacto que se ejecuta.
             program = function()
               return vim.fn.expand("%:p")
             end,
             cwd = function()
               return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
             end,
+            stopOnEntry = true,
             sourceMaps = true,
             resolveSourceMapLocations = { "${workspaceFolder}/**", "!**/node_modules/**" },
           },
@@ -231,6 +246,23 @@ return {
             cwd = "${workspaceFolder}",
             sourceMaps = true,
           },
+          -- TS directo con NODE NATIVO (Node >= 23.6 ejecuta .ts por type
+          -- stripping, sin tsx ni compilacion). Solo se registra para
+          -- typescript / typescriptreact (no para JS puro).
+          (language == "typescript" or language == "typescriptreact") and {
+            type = "pwa-node",
+            request = "launch",
+            name = "Launch TS",
+            program = function()
+              return vim.fn.expand("%:p")
+            end,
+            cwd = function()
+              return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
+            end,
+            stopOnEntry = true,
+            sourceMaps = true,
+            resolveSourceMapLocations = { "${workspaceFolder}/**", "!**/node_modules/**" },
+          } or nil,
           {
             type = "pwa-chrome",
             request = "launch",
@@ -248,36 +280,516 @@ return {
             webRoot = "${workspaceFolder}",
             sourceMaps = true,
           },
+          -- Jest: patron oficial del README de nvim-dap-vscode-js. Requiere jest
+          -- en el proyecto (./node_modules/jest/bin/jest.js). --runInBand evita
+          -- paralelismo (mas simple para debug).
+          {
+            type = "pwa-node",
+            request = "launch",
+            name = "Debug Jest Tests",
+            runtimeExecutable = "node",
+            runtimeArgs = {
+              "./node_modules/jest/bin/jest.js",
+              "--runInBand",
+            },
+            rootPath = "${workspaceFolder}",
+            cwd = "${workspaceFolder}",
+            console = "integratedTerminal",
+            internalConsoleOptions = "neverOpen",
+            sourceMaps = true,
+          },
+          -- Mocha: idem, del README oficial.
+          {
+            type = "pwa-node",
+            request = "launch",
+            name = "Debug Mocha Tests",
+            runtimeExecutable = "node",
+            runtimeArgs = {
+              "./node_modules/mocha/bin/mocha.js",
+            },
+            rootPath = "${workspaceFolder}",
+            cwd = "${workspaceFolder}",
+            console = "integratedTerminal",
+            internalConsoleOptions = "neverOpen",
+            sourceMaps = true,
+          },
         }
       end
 
-      -- Adapters pwa-* para vscode-js-debug.
-      -- vsDebugServer.js NO habla por stdio: escucha en un puerto TCP y lo imprime
-      -- en stdout (ej. "53397"). Leer ese stdout (como hace nvim-dap-vscode-js) es
-      -- frágil: si el puerto llega con texto extra, nvim-dap lo rechaza con
-      -- "adapter.port is required for server adapter". Solución robusta: el binario
-      -- ACEPTA el puerto como ARGUMENTO POSICIONAL (`node vsDebugServer.js 53700`
-      -- -> "Listening at :::53700"), así que lo arrancamos como job con puerto FIJO
-      -- y registramos los adapters como `server` con ese port => `adapter.port`
-      -- siempre es un número y nunca falla.
-      local port = 53700
-      local debugger_bin = vim.fn.stdpath("data") .. "/lazy/vscode-js-debug/out/src/vsDebugServer.js"
-      vim.fn.jobstart({ "node", debugger_bin, tostring(port) }, { detach = true })
+      -- ══════════════════════════════════════════════════════════
+      -- Adapters JS/TS (pwa-*) NATIVOS de nvim-dap
+      -- ══════════════════════════════════════════════════════════
+      -- Se lanza `dapDebugServer.js` como executable server y nvim-dap conecta.
+      -- `port = "${port}"` + `executable` hace que nvim-dap genere un puerto
+      -- LIBRE POR SESION, lo sustituya en los args y conecte (multi-session).
+      -- ⚠️ NO compilar vscode-js-debug a mano con gulp: los builds recientes
+      -- (HEAD/main) tienen un bug conocido que rompe el stepping ("No stopped
+      -- threads. Cannot move" al hacer step over/into/out). Usar el binario
+      -- empaquetado y versionado de Mason (:MasonInstall js-debug-adapter).
+      -- Con executable + ${port} nvim-dap inyecta el puerto directamente, sin
+      -- depender del stdout del binario. Elimina el error 1492 de raiz y, con
+      -- stopOnEntry en las configs, tambien el "No stopped threads".
+      -- Resolver el path del debugger via mason-registry (NO hardcodear): asi nunca
+      -- se rompe si cambia el layout interno del paquete js-debug-adapter entre
+      -- versiones. get_install_path() apunta al lugar real donde Mason lo instalo.
+      local mason_registry = require("mason-registry")
+      local pkg = mason_registry.is_installed("js-debug-adapter") and mason_registry.get_package("js-debug-adapter")
+      local js_debug_server = pkg and (pkg:get_install_path() .. "/js-debug/src/dapDebugServer.js")
+      if not js_debug_server or vim.fn.filereadable(js_debug_server) == 0 then
+        vim.notify(
+          "js-debug-adapter no encontrado. Corre :MasonInstall js-debug-adapter y reinicia nvim",
+          vim.log.levels.ERROR,
+          { title = "nvim-dap: JS/TS" }
+        )
+      end
+      local node_bin = vim.fn.exepath("node")
+      for _, name in ipairs({ "pwa-node", "pwa-chrome", "pwa-msedge", "node-terminal" }) do
+        dap.adapters[name] = {
+          type = "server",
+          -- host EXPLICITO: nvim-dap tiene un bug documentado si falta host+port
+          -- juntos en un adapter type=server (queda sin conectar en silencio).
+          host = "127.0.0.1",
+          port = "${port}",
+          executable = {
+            command = node_bin,
+            args = { js_debug_server, "${port}" },
+          },
+        }
+      end
 
-      dap.adapters["pwa-node"] = { type = "server", host = "127.0.0.1", port = port }
-      dap.adapters["pwa-chrome"] = dap.adapters["pwa-node"]
-      dap.adapters["pwa-msedge"] = dap.adapters["pwa-node"]
-      dap.adapters["node-terminal"] = dap.adapters["pwa-node"]
+      -- ══════════════════════════════════════════════════════════
+      -- UI FIX: layout en columnas, winbar, controls
+      -- ══════════════════════════════════════════════════════════
+      vim.schedule(function()
+        local dapui = require("dapui")
+        dapui.setup({
+          expand_lines = false,
+          render = { max_value_lines = 100, max_type_length = 80 },
+          controls = { enabled = true, element = "repl" },
+          layouts = {
+            {
+              elements = {
+                { id = "scopes", size = 0.40 },
+                { id = "breakpoints", size = 0.20 },
+                { id = "stacks", size = 0.10 },
+                { id = "watches", size = 0.20 },
+              },
+              size = 32,
+              position = "left",
+            },
+            {
+              elements = { "repl", "console" },
+              size = 10,
+              position = "bottom",
+            },
+          },
+        })
+
+        -- Winbar: nombre de cada panel (DAP Scopes, Watches, etc.)
+        local group = vim.api.nvim_create_augroup("MyDapUiWinbar", { clear = true })
+        vim.api.nvim_create_autocmd("BufWinEnter", {
+          group = group,
+          pattern = { "DAP*", "dap-repl" },
+          callback = function()
+            vim.wo.winbar = "%t"
+          end,
+        })
+        -- WinBar highlights = estilo lualine
+        vim.api.nvim_create_autocmd("ColorScheme", {
+          group = group,
+          pattern = "*",
+          callback = function()
+            local ok1, lc = pcall(vim.api.nvim_get_hl, 0, { name = "lualine_c_normal", link = false })
+            local ok2, nm = pcall(vim.api.nvim_get_hl, 0, { name = "Normal", link = false })
+            local bg = (ok1 and lc.bg) or (ok2 and nm.bg) or "#1e1e2e"
+            local fg = (ok1 and lc.fg) or (ok2 and nm.fg) or "#cdd6f4"
+            vim.api.nvim_set_hl(0, "WinBar", { bg = bg, fg = fg, bold = true })
+            vim.api.nvim_set_hl(0, "WinBarNC", { bg = bg, fg = fg, bold = false })
+          end,
+        })
+        if vim.g.colors_name then
+          vim.api.nvim_exec_autocmds("ColorScheme", { pattern = vim.g.colors_name })
+        end
+      end)
+
+      -- ══════════════════════════════════════════════════════════
+      -- MULTI-LENGUAJE: C/C++/Rust, Go, C#, Java, PHP
+      -- ══════════════════════════════════════════════════════════
+
+      -- Helper: buscar binario compilado
+      local function find_executable()
+        local file = vim.fn.expand("%:p")
+        if file == "" then
+          return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+        end
+        local dir = vim.fn.fnamemodify(file, ":h")
+        local name = vim.fn.fnamemodify(file, ":t:r")
+        local candidates = {
+          dir .. "/out/" .. name,
+          dir .. "/build/" .. name,
+          dir .. "/bin/" .. name,
+          dir .. "/target/debug/" .. name,
+          dir .. "/" .. name,
+        }
+        for _, path in ipairs(candidates) do
+          if vim.fn.filereadable(path) == 1 then
+            return path
+          end
+        end
+        return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+      end
+
+      -- C/C++/Rust (codelldb)
+      dap.adapters.codelldb = {
+        type = "server",
+        port = "${port}",
+        executable = { command = "codelldb", args = { "--port", "${port}" } },
+      }
+      local native_cfg = {
+        type = "codelldb",
+        request = "launch",
+        name = "Launch file",
+        program = find_executable,
+        cwd = "${workspaceFolder}",
+        stopAtEntry = false,
+      }
+      dap.configurations.c = { native_cfg }
+      dap.configurations.cpp = { native_cfg }
+      dap.configurations.rust = { native_cfg }
+
+      -- Go (delve)
+      dap.adapters.delvete = {
+        type = "server",
+        port = "${port}",
+        executable = { command = "dlv", args = { "dap", "-l", "127.0.0.1:${port}" } },
+      }
+      dap.configurations.go = {
+        { type = "delvete", request = "launch", name = "Launch", program = "${file}" },
+        { type = "delvete", request = "launch", name = "Launch package", program = "./${fileDirname}" },
+      }
+
+      -- C# (netcoredbg)
+      dap.adapters.netcoredbg = {
+        type = "executable",
+        command = "netcoredbg",
+        args = { "--interpreter=vscode" },
+      }
+      dap.configurations.cs = {
+        {
+          type = "netcoredbg",
+          request = "launch",
+          name = "Launch .NET",
+          program = function()
+            -- Usar buf_dir() (dir del archivo, no getcwd) para que el dll se
+            -- encuentre aunque nvim se haya abierto desde otro directorio.
+            -- `vim.fn.glob(...)` con 3er arg `1` (list) devuelve una TABLA de
+            -- rutas, no un string: tomar matches[1] directamente (NO split).
+            local root = buf_dir()
+            local matches = vim.fn.glob(root .. "/bin/Debug/**/*.dll", 0, 1)
+            local dll = ""
+            if type(matches) == "table" and #matches > 0 then
+              dll = matches[1]
+            end
+            if dll ~= "" then
+              return dll
+            end
+            return vim.fn.input("Path to dll: ", root .. "/bin/Debug/", "file")
+          end,
+          cwd = "${workspaceFolder}",
+          stopAtEntry = false,
+        },
+      }
+
+      -- Java: el adapter `java` y la config los registra el extra LazyVim
+      -- `lazyvim.plugins.extras.lang.java` via `require("jdtls").setup_dap()`.
+      -- El bundle java-debug-adapter es un fragmento OSGi que SOLO corre DENTRO
+      -- de jdtls (no es un .jar lanzable standalone). Quien active la depuracion
+      -- Java debe tener jdtls corriendo (LSP de Java) y los bundles en
+      -- $MASON/share/java-debug-adapter. NO configurar `dap.adapters.java` aqui.
+
+      -- PHP (Xdebug listen mode via php-debug-adapter de vscode-php-debug)
+      -- ⚠️ REQUIERE instalar el adapter primero:
+      --    :MasonInstall php-debug-adapter
+      --    (NO es "php" a secas: `php` no implementa el protocolo DAP, por eso
+      --    el error "Debug adapter didn't respond").
+      dap.adapters.php = {
+        type = "executable",
+        command = vim.fn.stdpath("data") .. "/mason/bin/php-debug-adapter",
+      }
+      dap.configurations.php = {
+        {
+          type = "php",
+          request = "launch",
+          name = "Listen for Xdebug",
+          port = 9003,
+          -- Con el servidor built-in `php -S` corrido desde el dir del archivo,
+          -- PHP ve el script con su ruta REAL local (ej. /tmp/testphp/index.php),
+          -- NO como /var/www/... Por eso NO se mapea a /var/www (romperia el
+          -- breakpoint). Si se abre el mismo archivo en nvim y el server corre
+          -- desde el mismo dir, no hace falta pathMappings.
+        },
+      }
+
+      -- Python (debugpy). Requiere: pip install debugpy (opcional en venv).
+      -- Detecta el intérprete: `.venv/bin/python` del proyecto, si no el de nix.
+      local function find_python()
+        local venv = vim.fn.getcwd() .. "/.venv/bin/python"
+        if vim.fn.filereadable(venv) == 1 then
+          return venv
+        end
+        return vim.fn.exepath("python3") ~= "" and vim.fn.exepath("python3") or "/home/diego/.nix-profile/bin/python3"
+      end
+      local py = find_python()
+      dap.adapters.python = {
+        type = "executable",
+        command = py,
+        args = { "-m", "debugpy.adapter" },
+      }
+      dap.configurations.python = {
+        {
+          type = "python",
+          request = "launch",
+          name = "Launch file",
+          program = function()
+            return vim.fn.expand("%:p")
+          end,
+          cwd = function()
+            return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
+          end,
+          pythonPath = py,
+          console = "integratedTerminal",
+        },
+        {
+          type = "python",
+          request = "launch",
+          name = "Attach to debugpy (launcher)",
+          connect = { host = "127.0.0.1", port = 5678 },
+          justMyCode = false,
+        },
+      }
+
+      -- ══════════════════════════════════════════════════════════
+      -- NOTIFICACIONES FALLBACK por lenguaje
+      -- Cuando el debugger falla (falta compilar, adapter no instalado,
+      -- intérprete ausente, etc.), se muestra el comando/requsito correcto
+      -- según el lenguaje del buffer en vez de un error criptico.
+      -- ══════════════════════════════════════════════════════════
+
+      -- build_hints[filetype] = funcion() -> { comando, descripcion }
+      -- Cada hint se genera EN TIEMPO DE USO con el directorio del buffer
+      -- actual (no al cargar el config, que capturaria el primer archivo).
+      local build_hints = {
+        rust = function()
+          return {
+            "cd " .. buf_dir() .. " && rustc -g -o build/main main.rs",
+            "Falta compilar el binario que lanza codelldb.",
+          }
+        end,
+        c = function()
+          return {
+            "cd " .. buf_dir() .. " && g++ -g -o build/main main.cpp",
+            "Falta compilar el binario nativo.",
+          }
+        end,
+        cpp = function()
+          return {
+            "cd " .. buf_dir() .. " && g++ -g -o build/main main.cpp",
+            "Falta compilar el binario nativo.",
+          }
+        end,
+        cs = function()
+          return {
+            "cd " .. buf_dir() .. " && dotnet build",
+            "No se encontró el .dll en bin/Debug. Compilá el proyecto .NET.",
+          }
+        end,
+        java = function()
+          return {
+            "Java DAP: 1) :MasonInstall jdtls 2) abrir un .java que este en un PROYECTO Java real (pom.xml o build.gradle — los archivos sueltos 'non-project' no debugean) 3) reiniciar nvim DESDE la raiz del proyecto para que jdtls lo importe 4) <leader>dc. El override plugins/java-dap.lua hace la config 'Launch Main Class' la UNICA (default) con stopOnEntry, y elimina la estatica 'Debug (Attach) - Remote' (attach 5005) que confundia.",
+            "Java: 'Error on attach to 127.0.0.1:5005' = jdtls NO reconocio el proyecto (non-project) y cae a la config estatica 'Attach - Remote' del extra LazyVim, que apunta a 5005 sin que haya un debuggee escuchando. No es la config real. CAUSA RAIZ: jdtls usa `vim.lsp.config.jdtls.root_markers` (nvim-lspconfig/lsp/jdtls.lua) que SOLO reconoce mvnw/gradlew/settings.gradle/.git y build.xml/pom.xml/build.gradle — **NO incluye .project/.classpath**. Asi que los markers Eclipse NO bastan: /tmp/testjava necesita un `pom.xml` minimo (YA CREADO) + layout Maven src/main/java. Reiniciá nvim desde /tmp/testjava y abrí src/main/java/com/example/Main.java para que jdtls lo importe como proyecto y registre el adapter `java`.",
+            "Java: 'Could not resolve java executable' = jdtls no resuelve el JDK en NixOS. JAVA_HOME se setea solo al arrancar nvim (lua/config/options.lua). Reiniciá nvim para que jdtls lo herede.",
+            "Atajos DAP (LazyVim): <leader>dc = Continue, <leader>do = Step Over, <leader>di = Step Into, <leader>dt = Step Out, <leader>db = togglear breakpoint, <leader>ds = Stop. En Java al pausar en la 1ra linea (stopOnEntry) usá <leader>do (Step Over) para ir linea a linea y <leader>dc para seguir hasta el siguiente breakpoint.",
+          }
+        end,
+        php = function()
+          local script = vim.fn.fnamemodify(vim.fn.expand("%:t"), ":t")
+          return {
+            "Debug PHP: 0) PREREQUISITO: comprobar que la extension Xdebug esta CARGADA en PHP -> `php -m | grep xdebug` (debe listar 'xdebug'). Si NO aparece, el debug nunca conecta (el adapter escucha en 9003 pero Xdebug no existe). Instalar la extension xdebug primero.",
+            "Debug PHP: 1) :MasonInstall php-debug-adapter (hecho)  2) levantar el servidor con Xdebug en OTRA terminal ANTES de <leader>dc:\n"
+              .. "    cd "
+              .. buf_dir()
+              .. " && php -d xdebug.mode=debug -d xdebug.start_with_request=yes -d xdebug.client_host=127.0.0.1 -d xdebug.client_port=9003 -S localhost:8000\n"
+              .. "  3) <leader>dc -> 'Listen for Xdebug'  4) DISPARAR una request HTTP para que Xdebug conecte\n"
+              .. "    (el adapter NO conecta con solo escuchar; necesita una peticion):\n"
+              .. "    xdg-open http://localhost:8000/"
+              .. script
+              .. "   (abre el navegador con el script actual)\n"
+              .. "    o el equivalente manual: curl http://localhost:8000/"
+              .. script
+              .. "\n"
+              .. "  Solo con una peticion al servidor Xdebug se activa y conecta al puerto 9003.",
+            "nvim-dap quedó 'Running Listen for Xdebug' pero Xdebug no conecta: (a) verificar `php -m | grep xdebug`, (b) disparar una request HTTP (xdg-open o curl http://localhost:8000/index.php).",
+          }
+        end,
+        python = function()
+          return {
+            "debugpy ya viene en work.nix; si sigue sin verse: python3 -m pip install debugpy",
+            "debugpy no encontrado para la depuración Python.",
+          }
+        end,
+      }
+
+      -- Devuelve el hint { comando, descripcion } para el filetype actual (o nil)
+      local function get_build_hint()
+        local maker = build_hints[vim.bo.filetype]
+        if not maker then
+          return nil
+        end
+        return maker()
+      end
+
+      -- Muestra la notificacion fallback con el comando/requsito correcto.
+      -- Usa vim.notify normal (NO se sobrescribe vim.notify globalmente para no
+      -- romper Noice; el aviso de Java/PHP se dispara desde preflight + hooks).
+      local function notify_build_hint()
+        local hint = get_build_hint()
+        if not hint then
+          return
+        end
+        local text = "\n" .. hint[2] .. "\n\n▶ " .. hint[1] .. "\n"
+        vim.notify(text, vim.log.levels.WARN, { title = "nvim-dap: requiere build/requisito" })
+        -- Intenta mostrar tambien como notificacion de sistema (notify-send)
+        if vim.fn.executable("notify-send") == 1 then
+          os.execute("notify-send -u normal 'nvim-dap: build hint' '" .. hint[1]:gsub("'", "") .. "' &")
+        end
+      end
+
+      -- Hacer que <F5>/<leader>dc muestre el hint antes de lanzar si el
+      -- artefacto no existe (fail-fast con aviso claro).
+      -- 1) Rust/C/C++: si el binario no esta, avisar el comando de compilacion.
+      -- 2) C#: si no hay .dll en bin/Debug, avisar dotnet build.
+      -- 3) Java: avisar que requiere jdtls (bundle OSGi; ver extra LazyVim java).
+      -- ⚠️ Definida ANTES de dap_continue_with_preflight: en Lua un `local
+      -- function` solo es visible despues de su declaracion; llamarlo antes
+      -- resolvia a un global nil -> E5108 "attempt to call global 'preflight_check'".
+      local function preflight_check()
+        local ft = vim.bo.filetype
+        if ft == "rust" or ft == "c" or ft == "cpp" then
+          local file = vim.fn.expand("%:p")
+          local dir = vim.fn.fnamemodify(file, ":h")
+          local name = vim.fn.fnamemodify(file, ":t:r")
+          local exe = dir .. "/build/" .. name
+          if vim.fn.filereadable(exe) ~= 1 then
+            vim.notify(
+              "No se encontro " .. exe .. "\n▶ " .. build_hints[ft]()[1],
+              vim.log.levels.WARN,
+              { title = "nvim-dap: compilar antes de debuggear" }
+            )
+          end
+        elseif ft == "cs" then
+          local root = buf_dir()
+          local matches = vim.fn.glob(root .. "/bin/Debug/**/*.dll", 0, 1)
+          local has_dll = type(matches) == "table" and #matches > 0
+          if not has_dll then
+            vim.notify(
+              "No hay .dll en bin/Debug\n▶ " .. build_hints.cs()[1],
+              vim.log.levels.WARN,
+              { title = "nvim-dap: compilar antes de debuggear" }
+            )
+          end
+        end
+      end
+
+      -- Continue CON preflight: avisa lo que falta antes de lanzar (Rust/C/C++,
+      -- C#). Se enlaza a <leader>dc / <leader>da / <F9> en vez de wrappear
+      -- vim.notify (que rompe Noice). preflight_check esta definida arriba.
+      -- En PHP ademas dispara xdg-open para activar Xdebug (el adapter solo
+      -- escucha; necesita una request HTTP al servidor built-in para conectar).
+      local function dap_continue_with_preflight()
+        preflight_check()
+        if vim.bo.filetype == "php" and vim.fn.executable("xdg-open") == 1 then
+          local script = vim.fn.fnamemodify(vim.fn.expand("%:t"), ":t")
+          vim.fn.jobstart({ "xdg-open", "http://localhost:8000/" .. script }, { detach = true })
+          -- Reutiliza el hint completo de build de PHP (requisito Xdebug + comando
+          -- del servidor + como disparar la request) para recordar que el servidor
+          -- con Xdebug debe estar levantado ANTES, si no no conecta al 9003.
+          notify_build_hint()
+        end
+        dap.continue()
+      end
+
+      -- Hook: detectar errores de lanzamiento reales del adapter y mostrar el
+      -- hint correcto. Cuando el binario no existe (codelldb: "is not a valid
+      -- executable"), falta debugpy, o el adapter no responde, el evento
+      -- "output" (stderr) lo reporta. Filtramos patrones conocidos por lenguaje.
+      dap.listeners.after.event["output"] = function(session, body)
+        if not body or type(body) ~= "table" then
+          return
+        end
+        local out = body.output or ""
+        local ft = vim.bo.filetype
+        local known = out:match("not a valid executable")
+          or out:match("does not exist")
+          or out:match("No module named ['\"]debugpy")
+          or out:match("adapter didn't respond")
+          or out:match("0x80070002")
+          or out:match("No such file or directory")
+        if known and build_hints[ft] then
+          notify_build_hint()
+        end
+      end
+
+      -- PHP: al iniciar sesion tipo listen, recordar levantar el servidor con
+      -- Xdebug ANTES de conectar y DISPARAR una request HTTP (si no, queda
+      -- "Running Listen for Xdebug" sin respuesta). El hint aparece
+      -- proactivamente en el evento initialized.
+      dap.listeners.after.event["initialized"] = function()
+        if vim.bo.filetype == "php" then
+          vim.notify(
+            "\nPHP: 'Listen for Xdebug' activo. Servidor + request HTTP:\n\n▶ " .. build_hints.php()[1],
+            vim.log.levels.INFO,
+            { title = "nvim-dap: PHP listen" }
+          )
+        end
+      end
+
+      -- Keymap global: <leader>dx siempre muestra el hint del lenguaje actual.
+      -- (Complementa al <F8>; util si el usuario no uso <F8>.)
+      vim.keymap.set("n", "<leader>dx", function()
+        local hint = get_build_hint()
+        if hint then
+          vim.notify(
+            "[" .. vim.bo.filetype .. "]\n\n" .. hint[2] .. "\n\n▶ " .. hint[1],
+            vim.log.levels.INFO,
+            { title = "nvim-dap: build hint" }
+          )
+        else
+          vim.notify("Sin hint registrado para filetype: " .. vim.bo.filetype, vim.log.levels.INFO, {
+            title = "nvim-dap",
+          })
+        end
+      end, { desc = "DAP: mostrar hint de build/requisito" })
+
+      -- Override <leader>dc y <leader>da (definidos arriba en keys) para que hagan
+      -- preflight ANTES de lanzar. Sin wrappear vim.notify: preflight avisa lo que
+      -- falta (compilar, o el bloqueo Java) antes de dejar que LazyVim/dap corra.
+      vim.keymap.set("n", "<leader>dc", dap_continue_with_preflight, { desc = "DAP: continue" })
+      vim.keymap.set("n", "<F9>", dap_continue_with_preflight, { desc = "DAP: continue" })
+
+      -- Keymap manual para ver el hint de build del lenguaje actual.
+      local function dap_hint_keymap()
+        local hint = get_build_hint()
+        if hint then
+          vim.notify("[" .. vim.bo.filetype .. "]" .. "\n▶ " .. hint[1], vim.log.levels.INFO, {
+            title = "nvim-dap: build hint",
+          })
+        else
+          vim.notify("Sin hint registrado para filetype: " .. vim.bo.filetype, vim.log.levels.INFO, {
+            title = "nvim-dap",
+          })
+        end
+      end
+      vim.keymap.set("n", "<F8>", dap_hint_keymap, { desc = "DAP: mostrar hint de build" })
     end,
-  },
-
-  -- vscode-js-debug: official JS/TS debugger
-  {
-    "microsoft/vscode-js-debug",
-    lazy = true,
-    -- --ignore-scripts evita el postinstall de Playwright (necesita apt-get, no disponible).
-    -- El adapter pwa-node (depuración de Node) no requiere el navegador Chromium.
-    build = "npm install --legacy-peer-deps --ignore-scripts && npx gulp vsDebugServerBundle && mv dist out",
-    version = "1.x",
   },
 }
