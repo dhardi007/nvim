@@ -295,6 +295,13 @@ return {
 
     vim.g.opencode_opts = {
       server = {
+        -- Conecta DIRECTO al server opencode --port existente de Termux (4096).
+        -- Sin `url`, el plugin usa auto-discovery (pgrep+lsof+CWD overlap) que
+        -- en Termux falla (lsof ausente / CWD distinto) -> crea OTRA instancia
+        -- en vez de usar el buffer existente. Con `url` ya conecta siempre a la
+        -- misma instancia que abre OC_CMD.
+        url = "http://localhost:4096",
+        connect = true,
         start = function()
           require("snacks.terminal").open(OC_CMD, OC_OPTS)
         end,
