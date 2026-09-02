@@ -42,6 +42,13 @@ return {
         desc = "Breakpoint Condition",
       },
       {
+        "<leader>dD",
+        function()
+          require("dap").clear_breakpoints()
+        end,
+        desc = "Clear All Breakpoints",
+      },
+      {
         "<leader>db",
         function()
           require("dap").toggle_breakpoint()
