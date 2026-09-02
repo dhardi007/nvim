@@ -32,6 +32,33 @@ local function tui_send(text, focus)
   return false
 end
 
+-- opencode se abre en una terminal snacks.terminal. El toggle reutiliza la
+-- MISMA instancia: snacks.terminal indexa la terminal por {cmd, cwd, env,
+-- count}. Fijamos una sola cwd al arrancar para que el id sea estable; así, al
+-- cambiar de proyecto/directorio SIEMPRE se enfoca/oculta la misma sesión de
+-- opencode y nunca se crea una segunda.
+local OC_CMD = "opencode --port"
+local OC_OPTS = {
+  cwd = vim.loop.cwd(), -- estable: no cambiar con el cwd actual de Neovim
+  win = {
+    position = "right",
+    enter = false,
+  },
+}
+
+-- Toggle real: muestra si está oculta, oculta si está visible, crea si no existe.
+local function toggle_opencode()
+  require("snacks.terminal").toggle(OC_CMD, OC_OPTS)
+end
+
+-- Focus: muestra y enfoca la terminal ya creada (o la crea si no hay ninguna).
+local function focus_opencode()
+  local term = require("snacks.terminal").get(OC_CMD, OC_OPTS)
+  if term then
+    term:show():focus()
+  end
+end
+
 return {
   "NickvanDyke/opencode.nvim",
   name = "opencode-nick",
@@ -42,16 +69,14 @@ return {
     -- ── Toggle ───────────────────────────────────────────────
     {
       "<leader>ao",
-      function()
-        require("opencode").toggle()
-      end,
+      toggle_opencode,
       mode = { "n" },
       desc = " 󰮮 Toggle OpenCode",
     },
 
     -- ── Ask / Prompts ─────────────────────────────────────────
     {
-      "<leader>al",
+      "<leader>aK",
       function()
         local as_group = vim.api.nvim_create_augroup("opencode_as_focus", { clear = true })
         vim.api.nvim_create_autocmd("User", {
@@ -238,23 +263,7 @@ return {
     -- ── Focus TUI terminal ───────────────────────────────────
     {
       "<leader>af",
-      function()
-        local bufs = vim.api.nvim_list_bufs()
-        for i = 1, #bufs do
-          if vim.bo[bufs[i]].buftype == "terminal" then
-            local name = vim.api.nvim_buf_get_name(bufs[i])
-            if name:match("opencode") then
-              local win = vim.fn.bufwinid(bufs[i])
-              if win ~= -1 then
-                vim.api.nvim_set_current_win(win)
-                vim.cmd("startinsert")
-                return
-              end
-            end
-          end
-        end
-        require("opencode").toggle()
-      end,
+      focus_opencode,
       desc = " 󰮮 Focus TUI terminal Opencode",
     },
 
@@ -286,23 +295,8 @@ return {
 
     vim.g.opencode_opts = {
       server = {
-        url = "http://localhost:4096",
-        -- si ya hay un server en 4096, abrir solo la terminal (no spawnar otro)
         start = function()
-          if server_running() then
-            -- server ya activo: solo abrir la terminal para el chat
-            if vim.fn.bufnr("$") ~= 0 then
-              for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-                if vim.bo[buf].buftype == "terminal" and vim.api.nvim_buf_get_name(buf):match("opencode") then
-                  return
-                end
-              end
-            end
-            vim.cmd("vsplit term://opencode | wincmd p")
-          else
-            -- ningún server activo -> levantarlo limpio en una terminal
-            vim.cmd("vsplit term://opencode --port | wincmd p")
-          end
+          require("snacks.terminal").open(OC_CMD, OC_OPTS)
         end,
       },
       providers = {
@@ -353,9 +347,7 @@ return {
     vim.keymap.set({ "n", "x" }, "<C-x>", function()
       require("opencode").select()
     end, { desc = " 󰮮 Execute opencode action…" })
-    vim.keymap.set({ "n", "t" }, "<C-.>", function()
-      require("opencode").toggle()
-    end, { desc = " 󰮮 Toggle opencode" })
+    vim.keymap.set({ "n", "t" }, "<C-.>", toggle_opencode, { desc = " 󰮮 Toggle opencode" })
 
     vim.keymap.set({ "n", "x" }, "go", function()
       return require("opencode").operator("@this ")

@@ -405,3 +405,16 @@ vim.keymap.set("n", "<leader>emf", function()
   local result = vim.fn.system('engram search "' .. query .. '" --project jscamp')
   vim.notify(result)
 end, { desc = "Engram: Search memory" })
+
+-- =============================
+-- SESIONES (persistence.nvim)
+-- LazyVim ya mapea la parte de restaurar:
+--   <leader>qs = Restore session   <leader>qS = Select session
+--   <leader>ql = Restore last      <leader>qq = Quit all
+--   <leader>qd = Don't save current
+-- Falta el de GUARDAR manualmente -> <leader>qg (guardar)
+-- =============================
+vim.keymap.set("n", "<leader>qg", function()
+  require("persistence").save()
+  vim.notify("Sesión guardada", vim.log.levels.INFO)
+end, { desc = "Guardar sesión (persistence)" })

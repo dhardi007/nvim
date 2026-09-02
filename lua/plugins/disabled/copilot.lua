@@ -80,7 +80,7 @@ return {
     vim.g.copilot_nes_debounce = 500
 
     -- Tab en NORMAL: acepta NES o fallback a C-i
-    vim.keymap.set("n", "<Tab>", function()
+    vim.keymap.set({ "n", "v", "i" }, "<Tab>", function()
       local ok, nes = pcall(require, "copilot-lsp.nes")
       if ok and nes.apply_pending_nes() then
         nes.walk_cursor_end_edit()
@@ -88,6 +88,30 @@ return {
       end
       return "<C-i>"
     end, { expr = true, noremap = true, desc = "NES: Aceptar o C-i" })
+
+    -- 👻 Aceptar líneas verdes predictivas (NES) en normal, insert y visual.
+    local function accept_nes()
+      local ok, nes = pcall(require, "copilot-lsp.nes")
+      if ok and nes.apply_pending_nes() then
+        nes.walk_cursor_end_edit()
+        return true
+      end
+      return false
+    end
+
+    -- Ctrl+Enter: acepta NES (normal, insert y visual)
+    vim.keymap.set({ "n", "i", "v" }, "<C-CR>", accept_nes, {
+      noremap = true,
+      silent = true,
+      desc = "NES: Aceptar",
+    })
+
+    -- Alt+Enter: acepta NES (normal, insert y visual)
+    vim.keymap.set({ "n", "i", "v" }, "<M-CR>", accept_nes, {
+      noremap = true,
+      silent = true,
+      desc = "NES: Aceptar",
+    })
 
     -- Esc en NORMAL: limpiar NES o nohlsearch
     vim.keymap.set("n", "<Esc>", function()
@@ -99,7 +123,7 @@ return {
     end, { noremap = true, desc = "NES: Limpiar o nohlsearch" })
 
     -- S-Tab en NORMAL: rechazar NES
-    vim.keymap.set("n", "<S-Tab>", function()
+    vim.keymap.set({ "n", "i", "v" }, "<S-Tab>", function()
       local ok, nes = pcall(require, "copilot-lsp.nes")
       if ok then
         nes.clear()

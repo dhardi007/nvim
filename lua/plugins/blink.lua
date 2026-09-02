@@ -8,7 +8,9 @@ return {
       -- Chat buffers (CopilotChat, Avante, CodeCompanion): sin completado ni
       -- snippets — "gh" ahí NO debe expandir el snippet de licencia Copyright.
       local ft = vim.bo.filetype
-      if ft ~= "" and vim.tbl_contains({ "copilot-chat", "Avante", "AvanteInput", "AvanteAsk", "codecompanion" }, ft) then
+      if
+        ft ~= "" and vim.tbl_contains({ "copilot-chat", "Avante", "AvanteInput", "AvanteAsk", "codecompanion" }, ft)
+      then
         return false
       end
       return vim.b.blink_cmp_enabled ~= false
