@@ -40,7 +40,7 @@ opt.softtabstop = 2
 opt.clipboard:append("unnamedplus")
 
 -- line wrapping
-opt.wrap = false
+opt.wrap = true
 
 -- backspace
 opt.backspace = "indent,eol,start"

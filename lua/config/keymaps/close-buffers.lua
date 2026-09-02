@@ -9,7 +9,7 @@ local keymap = vim.keymap
 -- CERRAR BUFFER (PASIVO)
 -- Equivalente a: <leader>bd
 -- =============================
-vim.keymap.set("n", "<C-q>", function()
+vim.keymap.set("n", "<M-q>", function()
   local bufnr = vim.api.nvim_get_current_buf()
   vim.cmd("bnext") -- Cambia al buffer siguiente en la ventana actual
   vim.cmd("bdelete " .. bufnr) -- Borra el buffer viejo en segundo plano
@@ -20,7 +20,7 @@ end, { noremap = true, silent = true, desc = "Borrar buffer manteniendo ventana"
 -- Equivalente a: <leader>bD
 -- =============================
 --🛑 🗿 Cerrar pestaña Y buffer
-keymap.set("n", "<M-q>", function()
+keymap.set("n", "<C-q>", function()
   local buftype = vim.bo.buftype
   local filetype = vim.bo.filetype
   local bufnr = vim.api.nvim_get_current_buf()
@@ -67,7 +67,8 @@ keymap.set("n", "<M-q>", function()
   end, buffers)
 
   if #normal_buffers > 1 then
-    vim.cmd("bdelete!")
+    vim.cmd("bnext")
+    vim.cmd("bdelete " .. bufnr)
   else
     vim.cmd("quit!")
   end

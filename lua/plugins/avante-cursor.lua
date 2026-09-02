@@ -187,6 +187,10 @@ return {
         end,
       })
 
+      -- 🐛 Fix: avante.nvim recente rompe con log_level numérico (default roto). Forzar string temprano.
+      vim.g.avante = vim.g.avante or {}
+      vim.g.avante.log_level = "WARN"
+
       return {
         -- 🎯 CONFIGURACIÓN BÁSICA
         --   ---@alias Provider "claude" | "openai" | "azure" | "gemini" | "cohere" | "copilot" | string
@@ -350,7 +354,7 @@ return {
             prev = "[x",
           },
           suggestion = {
-            accept = "<M-CR>", -- Alt+Enter (M = Alt); Alt+l estaba ocupado por hypr (movewindow) y Ctrl+Tab por kitty (next_window)
+            accept = "<M-y>", -- Alt+y libre: aceptar sugerencia de avante (M-l lo usa copilot, M-CR ahora es de copilot NES)
             next = "<M-]>",
             prev = "<M-[>",
             dismiss = "<C-]>",
@@ -380,14 +384,6 @@ return {
             close_from_input = nil, -- e.g., { normal = "<Esc>", insert = "<C-d>" }
           },
         },
-        -- [dizzi] Alias: Ctrl+Enter = accept de la sugerencia inline (mismo comportamiento que M-CR)
-        vim.keymap.set("i", "<C-CR>", function()
-          local av = require("avante")
-          local _, _, sg = av.get()
-          if sg and sg:is_visible() then
-            sg:accept()
-          end
-        end, { desc = "avante: accept suggestion (alias Ctrl+Enter)", noremap = true, silent = true }),
         selection = {
           enabled = true,
           hint_display = "delayed",
