@@ -260,10 +260,38 @@ return {
             cwd = function()
               return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
             end,
+            -- Node >=22.6 ejecuta .ts nativo solo con este flag; en 23.6+/24
+            -- es default pero explicitarlo cubre 22.x/23.x sin reinstalar nada.
+            runtimeArgs = { "--experimental-strip-types" },
             stopOnEntry = true,
             sourceMaps = true,
             resolveSourceMapLocations = { "${workspaceFolder}/**", "!**/node_modules/**" },
           })
+
+          -- TS con imports SIN extension ("./talent" -> .ts/.d.ts): Node nativo
+          -- (strip-types) NO los resuelve, ESM exige extension explicita. Si el
+          -- proyecto tiene ts-node en node_modules/.bin, se agrega esta config
+          -- que los resuelve con el loader ESM de ts-node. Si no existe, se omite
+          -- (el hint de typescript explica como activarla).
+          local ts_node_bin = vim.fn.getcwd() .. "/node_modules/.bin/ts-node"
+          if vim.fn.filereadable(ts_node_bin) == 1 then
+            table.insert(configs, {
+              type = "pwa-node",
+              request = "launch",
+              name = "Launch TS (ts-node: resolve imports)",
+              runtimeExecutable = "node",
+              runtimeArgs = { "--loader", "ts-node/esm", "--no-warnings" },
+              program = function()
+                return vim.fn.expand("%:p")
+              end,
+              cwd = function()
+                return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
+              end,
+              environment = { TS_NODE_PROJECT = vim.fn.getcwd() .. "/tsconfig.json" },
+              stopOnEntry = true,
+              sourceMaps = true,
+            })
+          end
         end
 
         vim.list_extend(configs, {
@@ -637,6 +665,18 @@ return {
           return {
             "debugpy ya viene en work.nix; si sigue sin verse: python3 -m pip install debugpy",
             "debugpy no encontrado para la depuración Python.",
+          }
+        end,
+        typescript = function()
+          return {
+            "Debug TS (Vite/React = NO es un script node): 1) PRIMERO levantá el proyecto → `npm run dev` (o tu runner, ej. <leader>l s); el debugger va a atacar el bundler, sin eso los breakpoints de .ts/.tsx no existen todavia. 2) <leader>dc → elige 'Launch Chrome (React/Dev)' (abre Chromium en :5173). 3) Un archivo .ts SUELTO (sin bundler/backend) sí funciona con 'Launch TS' directo: es una decision de contexto — script standalone no necesita pre-requisito; app Vite sí (como PHP con su servidor Xdebug). 4) .d.ts NO se ejecuta (solo tipos).",
+            "TS: fallo al correr directo con pwa-node = la app corre sobre Vite (browser), no sobre Node. Node no resuelve tipos ('PayloadAction') ni imports bundler. Levantá el proyecto (npm run dev) y usá Launch Chrome.",
+          }
+        end,
+        typescriptreact = function()
+          return {
+            "Debug TSX (Vite/React): 1) PRIMERO levantá la app → `npm run dev` (o tu runner, ej. <leader>l s) — el debugger ataca el dev-server del bundler, que es quien tiene compilado el .tsx en memoria con sourcemaps; sin servidor no hay código que depurar (igual que PHP necesita su servidor Xdebug). 2) <leader>dc → elige 'Launch Chrome (React/Dev)' (:5173). 3) Solo en scripts node sueltos (sin Vite/React) sirve 'Launch TS' directo, es contexto, no otra config. 4) .d.ts = solo tipos, no es ejecutable.",
+            "TSX: 'Cannot find module' / errores de runtime con pwa-node = esperado: esto es una app de browser con moduleResolution bundler. Node no la puede ejecutar sola. Levantá el proyecto (npm run dev) + Launch Chrome.",
           }
         end,
       }

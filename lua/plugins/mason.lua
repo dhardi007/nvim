@@ -8,6 +8,7 @@ local is_termux = vim.fn.isdirectory(vim.env.PREFIX or "") == 1
 local ensure_installed = {
   -- LSP (portables)
   "angular-language-server",
+  "copilot-language-server", -- GitHub Copilot (npm: @github/copilot-language-server)
   "eslint-lsp",
   "json-lsp",
   "lua-language-server",
