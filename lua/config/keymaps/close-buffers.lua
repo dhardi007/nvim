@@ -6,14 +6,21 @@ vim.g.mapleader = " "
 local keymap = vim.keymap
 
 -- =============================
--- CERRAR BUFFERS INTELIGENTE
+-- CERRAR BUFFER (PASIVO)
+-- Equivalente a: <leader>bd
 -- =============================
+vim.keymap.set("n", "<C-q>", function()
+  local bufnr = vim.api.nvim_get_current_buf()
+  vim.cmd("bnext") -- Cambia al buffer siguiente en la ventana actual
+  vim.cmd("bdelete " .. bufnr) -- Borra el buffer viejo en segundo plano
+end, { noremap = true, silent = true, desc = "Borrar buffer manteniendo ventana" })
 
 -- =============================
--- CERRAR BUFFERS INTELIGENTE
+-- CERRAR BUFFERS INTELIGENTE (+split)
+-- Equivalente a: <leader>bD
 -- =============================
 --🛑 🗿 Cerrar pestaña Y buffer
-keymap.set("n", "<C-q>", function()
+keymap.set("n", "<M-q>", function()
   local buftype = vim.bo.buftype
   local filetype = vim.bo.filetype
   local bufnr = vim.api.nvim_get_current_buf()
