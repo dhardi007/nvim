@@ -14,8 +14,8 @@ return {
         auto_trigger = true,
         debounce = 75,
         keymap = {
-          -- accept = "<Tab>",
-          -- accept_word = "<C-Right>",
+          accept = "<Tab>",
+          accept_word = "<C-CR>",
           -- accept_line = "<C-j>",
           -- dismiss = "<C-]>",
           -- next = "<M-]>",
