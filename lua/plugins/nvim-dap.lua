@@ -28,6 +28,13 @@ return {
     keys = {
       { "<leader>d", "", desc = "+debug", mode = { "n", "v" } }, -- Group for debug commands
       {
+        "<leader>dr",
+        function()
+          require("dap").restart()
+        end,
+        desc = "Restart Debugger",
+      },
+      {
         "<leader>dB",
         function()
           require("dap").set_breakpoint(vim.fn.input("Breakpoint condition: "))
@@ -119,7 +126,7 @@ return {
         desc = "Pause",
       },
       {
-        "<leader>dr",
+        "<leader>dz",
         function()
           require("dap").repl.toggle()
         end,
