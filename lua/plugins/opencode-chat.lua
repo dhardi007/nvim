@@ -267,45 +267,7 @@ return {
       desc = " 󰮮 Select Model (Ctrl+X M)",
     },
 
-    -- ── Menú de prompts (desde gemini-keys) ───────────────────
-    {
-      "<leader>ag",
-      function()
-        local options = {
-          "   Revisar código",
-          "  󱜨 Explicar código",
-          "   Debuggear error",
-          "  󰈏 Refactorizar",
-          "  󰓅 Optimizar",
-          "   󱋑 Personalizado",
-        }
-        local prompts = {
-          "Revisa este código y sugiere mejoras:",
-          "Explica este código paso a paso:",
-          "Debuggea este error:",
-          "Refactoriza este código:",
-          "Optimiza este código:",
-        }
-        vim.ui.select(options, {
-          prompt = " 󰊭 ~ Acción Opencode:",
-        }, function(choice, idx)
-          if not choice then
-            return
-          end
-          if idx == 6 then
-            vim.ui.input({ prompt = "Tu prompt: " }, function(input)
-              if input and input ~= "" then
-                require("opencode").ask("@this: " .. input, { submit = true })
-              end
-            end)
-          else
-            require("opencode").ask("@this: " .. prompts[idx], { submit = true })
-          end
-        end)
-      end,
-      mode = { "n", "x" },
-      desc = " 󰮮 Menú de prompts Opencode",
-    },
+    -- ── Menú de prompts [Redundante, existe visual <leader>ap]──────────────────────────────────────
   },
 
   config = function()

@@ -1,5 +1,9 @@
--- 💸💳💰REQUIERE API. USA :CopilotChat
--- This file contains the configuration for integrating GitHub Copilot and Copilot Chat plugins in Neovim.
+-- CopilotChat.nvim: el chat oficial de GitHub Copilot, companion ideal de NES.
+-- Usa el MISMO copilot_ls que genera las líneas verdes predictivas (copilot.lua),
+-- así que NES y el chat comparten sesión/quota del servidor.
+-- Comandos: :CopilotChat, `:CopilotChatCommit`, prompts <leader>cc (LazyVim default)
+-- Este archivo estaba en disabled/ durante la migración a Avante; se re-activó
+-- como must-pull para aprovechar el ecosistema Copilot (NES + chat + diffs).
 
 -- Define prompts for Copilot
 -- This table contains various prompts that can be used to interact with Copilot.

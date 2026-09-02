@@ -350,7 +350,7 @@ return {
             prev = "[x",
           },
           suggestion = {
-            accept = "<M-l>",
+            accept = "<M-CR>", -- Alt+Enter (M = Alt); Alt+l estaba ocupado por hypr (movewindow) y Ctrl+Tab por kitty (next_window)
             next = "<M-]>",
             prev = "<M-[>",
             dismiss = "<C-]>",
@@ -380,6 +380,14 @@ return {
             close_from_input = nil, -- e.g., { normal = "<Esc>", insert = "<C-d>" }
           },
         },
+        -- [dizzi] Alias: Ctrl+Enter = accept de la sugerencia inline (mismo comportamiento que M-CR)
+        vim.keymap.set("i", "<C-CR>", function()
+          local av = require("avante")
+          local _, _, sg = av.get()
+          if sg and sg:is_visible() then
+            sg:accept()
+          end
+        end, { desc = "avante: accept suggestion (alias Ctrl+Enter)", noremap = true, silent = true }),
         selection = {
           enabled = true,
           hint_display = "delayed",

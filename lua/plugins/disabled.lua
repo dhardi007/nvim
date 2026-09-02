@@ -34,7 +34,7 @@ return {
   --  Copilot AI Plugins for Neovim  ..
   -- {
   --   "CopilotC-Nvim/CopilotChat.nvim", -- 1/10 | Codeium: 2/10
-  --   enabled = false, --     no funciona "Thinking..."
+  --   enabled = true, --     no funciona "Thinking..."
   -- },
   -- Autocompletion AI Plugins for Neovim   Suggestions, Completions... 󰓅 .[pls add Tab]
   {
@@ -101,9 +101,10 @@ return {
   -- },
   -- {
   -- 0. 󰊭 Prefiero usar mi config de Gemini-cli
+  -- 0. 󰊭 Antigravity CLI (reemplaza Gemini)
   {
-    "jonroosevelt/gemini-cli.nvim", -- 3/10
-    enabled = false, -- Gratuito, pero el Modo Plan no existe, la implementacion del codigo no existe, y hasta yo hice una mejor config de Gemini-cli 󰊭 .
+    "NakLast/antigravity-cli.nvim",
+    enabled = true, -- Mapeado a Space + G, requiere antigravity desde nix
   },
   --  MCPHUB  - Requiere APIKEY DE COPILOT permantente o 30 dias
   { "ravitemer/mcphub.nvim", enabled = true },

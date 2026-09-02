@@ -42,6 +42,19 @@ return {
       },
     })
 
+    -- NES: la sugerencia verde se limpia tras N movimientos de cursor (default 3)
+    require("copilot-lsp").setup({
+      nes = { move_count_threshold = 12 },
+    })
+
+    -- Verde clásico de GitHub para el ghost text de NES (líneas añadidas/borradas)
+    local function set_nes_hl()
+      vim.api.nvim_set_hl(0, "CopilotLspNesAdd", { fg = "#ffffff", bg = "#238636" })
+      vim.api.nvim_set_hl(0, "CopilotLspNesDelete", { fg = "#ffa198", bg = "#391a1a" })
+    end
+    set_nes_hl()
+    vim.api.nvim_create_autocmd("ColorScheme", { callback = set_nes_hl })
+
     -- 🔥 Desactivar Copilot en buffers sin archivo (Avante, terminal, etc)
     -- Usar vim.b.copilot_enabled en lugar de comandos para evitar RPC errors
 

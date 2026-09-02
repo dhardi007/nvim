@@ -4,6 +4,10 @@ return {
     "L3MON4D3/LuaSnip",
     dependencies = { "rafamadriz/friendly-snippets" },
     config = function()
+      -- Regla de invocación: los snippets SOLO se expanden al aceptarlos en el
+      -- menú (Tab/Confirm), NUNCA automáticamente al escribir (nada de que 'gh'
+      -- dispare el snippet de licencia Copyright por sorpresa).
+      require("luasnip").config.setup({ enable_autosnippets = false })
       require("luasnip.loaders.from_vscode").lazy_load()
     end,
   },
@@ -73,6 +77,26 @@ return {
             ellipsis_char = "...",
           }),
         },
+      })
+
+      -- Buffers de chat (CopilotChat, Avante, CodeCompanion, OpenCode, ...):
+      -- sin completado ni snippets — escribir aquí NO debe expandir nada
+      -- (p. ej. "gh" no expande el snippet de licencia Copyright).
+      local chat_filetypes = {
+        "copilot-chat",
+        "Avante",
+        "AvanteInput",
+        "AvanteAsk",
+        "codecompanion",
+        "opencode_ask",
+        "opencode_input",
+        "opencode_output",
+      }
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = chat_filetypes,
+        callback = function()
+          vim.b.cmp_enabled = false
+        end,
       })
     end,
   },

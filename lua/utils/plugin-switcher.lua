@@ -1,4 +1,8 @@
 -- lua/utils/plugin-switcher.lua
+-- 🔌 Plugin Toggle & Disable Manager
+-- Sincroniza automáticamente con lua/plugins/disabled.lua
+-- Soporta toggle interactivo, por categoría y programático
+
 local M = {}
 
 local PLUGINS_CONFIG = {
@@ -21,6 +25,12 @@ local PLUGINS_CONFIG = {
     file = "code-companion.lua",
     category = "AI Assistant",
   },
+  antigravity_cli = {
+    name = "Antigravity CLI",
+    icon = "󰨞",
+    file = "antigravity.lua",
+    category = "AI Assistant",
+  },
   gemini_cli = {
     name = "Gemini CLI",
     icon = "󰊭",
@@ -33,8 +43,8 @@ local PLUGINS_CONFIG = {
     file = "openclaw.lua",
     category = "AI Assistant",
   },
-  -- Antigravity-copilot.lua - [Funciona en modo NORMAL]
-  antigravity_copilot = {
+  -- Copilot NES - Next Edit Suggestion [NORMAL mode]
+  copilot_nes = {
     name = "Copilot NES",
     icon = "󰯈",
     file = "Antigravity-copilot.lua",
@@ -50,7 +60,6 @@ local PLUGINS_CONFIG = {
   },
   supermaven = {
     name = "Supermaven",
-    icon = "",
     icon = "󰓅",
     file = "supermaven.lua",
     category = "AI Completion",
@@ -67,13 +76,13 @@ local PLUGINS_CONFIG = {
     file = "windsurf-codeium.lua",
     category = "AI Completion",
   },
-
   fittencode = {
     name = "FittenCode",
     icon = "",
     file = "ai-fittencode.lua",
     category = "AI Completion",
   },
+
   -- 🎮 OpenCode variants
   opencode = {
     name = "OpenCode (sudo-tee)",
@@ -109,14 +118,12 @@ local PLUGINS_CONFIG = {
     file = "bufferline.lua",
     category = "UI",
   },
-
   markdown = {
     name = "Markdown View",
     icon = "",
     file = "markview.lua",
     category = "UI",
   },
-
   markdownRender = {
     name = "Markdown Render",
     icon = "",
@@ -169,7 +176,6 @@ local PLUGINS_CONFIG = {
     file = "mcphub-nvim.lua",
     category = "Productivity",
   },
-
   obsidian = {
     name = "Obsidian",
     icon = "",
@@ -186,16 +192,69 @@ local function get_plugins_path()
   return vim.fn.stdpath("config") .. "/lua/plugins"
 end
 
-local function is_plugin_disabled(plugin_key)
+local function get_disabled_lua_path()
+  return vim.fn.stdpath("config") .. "/lua/plugins/disabled.lua"
+end
+
+-- ⭐ NUEVA FUNCIÓN: Sincronizar disabled.lua en tiempo real
+-- Busca en disabled.lua y actualiza el field "enabled = true/false"
+local function update_disabled_config(plugin_key, should_disable)
   local config = PLUGINS_CONFIG[plugin_key]
   if not config then
     return false
   end
 
-  local disabled_file = get_disabled_path() .. "/" .. config.file
-  return vim.fn.filereadable(disabled_file) == 1
+  local disabled_file = get_disabled_lua_path()
+
+  if vim.fn.filereadable(disabled_file) == 0 then
+    vim.notify("❌ disabled.lua no encontrado en " .. disabled_file, vim.log.levels.ERROR)
+    return false
+  end
+
+  local content = vim.fn.readfile(disabled_file)
+  local modified = false
+  local plugin_found = false
+  local i = 1
+
+  while i <= #content do
+    local line = content[i]
+
+    -- Busca el bloque del plugin por nombre o archivo
+    if line:match(config.name:gsub("%-", "%%-")) or line:match(config.file:gsub("%-", "%%-")) then
+      plugin_found = true
+      -- Busca la línea "enabled = true/false" en los siguientes 15 líneas
+      for j = i, math.min(i + 15, #content) do
+        if content[j]:match("enabled%s*=%s*[a-z]+") then
+          local old_line = content[j]
+          local new_line = old_line:gsub("enabled%s*=%s*[a-z]+", "enabled = " .. (should_disable and "false" or "true"))
+
+          if new_line ~= old_line then
+            content[j] = new_line
+            modified = true
+            break
+          end
+        end
+      end
+      if modified then
+        break
+      end
+    end
+    i = i + 1
+  end
+
+if not plugin_found then
+     vim.notify("⚠️  Plugin no encontrado en disabled.lua: " .. config.name, vim.log.levels.WARN)
+     return false
+   end
+
+   if modified then
+     vim.fn.writefile(content, disabled_file)
+   end
+
+   return true
 end
 
+-- Move plugin file between lua/plugins/ and lua/plugins/disabled/
 local function move_plugin(plugin_key, to_disabled)
   local config = PLUGINS_CONFIG[plugin_key]
   if not config then
@@ -203,6 +262,22 @@ local function move_plugin(plugin_key, to_disabled)
     return false
   end
 
+  -- Primero intentar sincronizar con disabled.lua
+  if update_disabled_config(plugin_key, to_disabled) then
+    local status = to_disabled and "❌ Desactivado" or "✅ Activado"
+    vim.notify(
+      status
+        .. ": "
+        .. config.icon
+        .. " "
+        .. config.name
+        .. "\n\n💾 disabled.lua actualizado\n🔄 Reinicia Neovim (o :e lua/plugins/disabled.lua)",
+      vim.log.levels.INFO
+    )
+    return true
+  end
+
+  -- Fallback: usar sistema de archivos (para plugins sin entrada en disabled.lua)
   local from_dir = to_disabled and get_plugins_path() or get_disabled_path()
   local to_dir = to_disabled and get_disabled_path() or get_plugins_path()
 
@@ -216,9 +291,10 @@ local function move_plugin(plugin_key, to_disabled)
         .. config.icon
         .. " "
         .. config.name
-        .. " Manejado por disabled.lua ||o ya está "
-        .. (to_disabled and "Desactivado" or "activado"),
-      vim.log.levels.WARN
+        .. " — Ya está "
+        .. (to_disabled and "desactivado" or "activado")
+        .. " (gestionado por disabled.lua)",
+      vim.log.levels.INFO
     )
     return false
   end
@@ -242,31 +318,67 @@ local function move_plugin(plugin_key, to_disabled)
   end
 end
 
+-- Comprobar si un plugin está desactivado (en disabled.lua o en la carpeta disabled/)
+local function is_plugin_disabled(plugin_key)
+  local config = PLUGINS_CONFIG[plugin_key]
+  if not config then
+    return false
+  end
+
+  -- Primero verificar en disabled.lua
+  local disabled_file = get_disabled_lua_path()
+  if vim.fn.filereadable(disabled_file) == 1 then
+    local content = vim.fn.readfile(disabled_file)
+    for i, line in ipairs(content) do
+      if line:match(config.name:gsub("%-", "%%-")) or line:match(config.file:gsub("%-", "%%-")) then
+        -- Buscar "enabled = false" en los siguientes 15 líneas
+        for j = i, math.min(i + 15, #content) do
+          if content[j]:match("enabled%s*=%s*false") then
+            return true
+          elseif content[j]:match("enabled%s*=%s*true") then
+            return false
+          end
+        end
+      end
+    end
+  end
+
+  -- Fallback: verificar si existe en carpeta disabled/
+  local disabled_file_path = get_disabled_path() .. "/" .. config.file
+  return vim.fn.filereadable(disabled_file_path) == 1
+end
+
+-- ⭐ FUNCIÓN PÚBLICA: Toggle plugin
 function M.toggle_plugin(plugin_key)
   local is_disabled = is_plugin_disabled(plugin_key)
   move_plugin(plugin_key, not is_disabled)
 end
 
+-- ⭐ FUNCIÓN PÚBLICA: Deshabilitar plugin
 function M.disable_plugin(plugin_key)
   if not is_plugin_disabled(plugin_key) then
     move_plugin(plugin_key, true)
+  else
+    vim.notify("ℹ️  " .. PLUGINS_CONFIG[plugin_key].name .. " ya está desactivado", vim.log.levels.INFO)
   end
 end
 
+-- ⭐ FUNCIÓN PÚBLICA: Habilitar plugin
 function M.enable_plugin(plugin_key)
   if is_plugin_disabled(plugin_key) then
     move_plugin(plugin_key, false)
+  else
+    vim.notify("ℹ️  " .. PLUGINS_CONFIG[plugin_key].name .. " ya está activado", vim.log.levels.INFO)
   end
 end
 
--- UI interactiva MEJORADA con categorías
+-- ⭐ FUNCIÓN PÚBLICA: UI interactiva con categorías
 function M.interactive_toggle()
   local choices = {}
-  local choices_map = {} -- Mapeo para encontrar el key correcto
-
+  local choices_map = {}
   local categories = {}
 
-  -- Agrupar por categoría
+  -- Agrupar plugins por categoría
   for key, config in pairs(PLUGINS_CONFIG) do
     if not categories[config.category] then
       categories[config.category] = {}
@@ -296,15 +408,16 @@ function M.interactive_toggle()
       -- Header de categoría
       table.insert(choices, "─── " .. cat_name .. " ───")
 
-      -- Plugins de la categoría
+      -- Plugins de la categoría (ordenados alfabéticamente)
       table.sort(plugins, function(a, b)
         return a.config.name < b.config.name
       end)
+
       for _, item in ipairs(plugins) do
         local status = item.disabled and "🚫 |" or "󰗠  |"
         local choice_text = "  " .. status .. " " .. item.config.icon .. " " .. item.config.name
         table.insert(choices, choice_text)
-        choices_map[choice_text] = item.key -- Guardar mapeo
+        choices_map[choice_text] = item.key
       end
     end
   end
@@ -318,11 +431,10 @@ function M.interactive_toggle()
       return item
     end,
   }, function(choice)
-    if not choice or choice:match("󰜺") or choice:match("^───") then
+    if not choice or choice:match("󰜺") or choice:match("^───") or choice:match("❌") then
       return
     end
 
-    -- Obtener el key del mapeo
     local plugin_key = choices_map[choice]
     if plugin_key then
       M.toggle_plugin(plugin_key)
@@ -330,7 +442,7 @@ function M.interactive_toggle()
   end)
 end
 
--- UI para toggle por categoría
+-- ⭐ FUNCIÓN PÚBLICA: UI para toggle por categoría
 function M.toggle_by_category(category)
   local plugins = {}
 
@@ -357,7 +469,7 @@ function M.toggle_by_category(category)
   end)
 
   for _, item in ipairs(plugins) do
-    local status = item.disabled and "🚫  |" or "󰗠  |"
+    local status = item.disabled and "🚫  |" or "✅  |"
     local choice_text = status .. " " .. item.config.icon .. " " .. item.config.name
     table.insert(choices, choice_text)
     choices_map[choice_text] = item.key
@@ -366,7 +478,7 @@ function M.toggle_by_category(category)
   table.insert(choices, "󰜺 Cancelar")
 
   vim.ui.select(choices, {
-    prompt = "🔌 " .. category .. ":",
+    prompt = "🔌 " .. category .. " :",
   }, function(choice)
     if not choice or choice:match("󰜺") then
       return
@@ -379,7 +491,7 @@ function M.toggle_by_category(category)
   end)
 end
 
--- Shortcuts para categorías comunes
+-- ⭐ Shortcuts para categorías comunes
 function M.toggle_ai_completion()
   M.toggle_by_category("AI Completion")
 end
@@ -390,6 +502,21 @@ end
 
 function M.toggle_discord()
   M.toggle_by_category("Discord")
+end
+
+-- ⭐ FUNCIÓN PÚBLICA: Obtener estado de un plugin
+function M.is_disabled(plugin_key)
+  return is_plugin_disabled(plugin_key)
+end
+
+-- ⭐ FUNCIÓN PÚBLICA: Obtener config de un plugin
+function M.get_plugin_config(plugin_key)
+  return PLUGINS_CONFIG[plugin_key]
+end
+
+-- ⭐ FUNCIÓN PÚBLICA: Listar todos los plugins
+function M.list_plugins()
+  return PLUGINS_CONFIG
 end
 
 return M

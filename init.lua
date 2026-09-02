@@ -116,6 +116,19 @@ elseif is_unix then
   vim.opt.shell = vim.fn.executable("zsh") == 1 and "zsh" or "bash"
   vim.g.node_host_prog = vim.fn.exepath("node") -- toma el node del PATH
   vim.env.PATH = os.getenv("HOME") .. "/.npm-global/bin:" .. vim.env.PATH
+  -- NixOS: el server nativo de Copilot (copilot-language-server via Mason)
+  -- carga @github/keytar con require() directo SIN el RUNPATH nix, así que
+  -- necesita glib + libsecret en LD_LIBRARY_PATH para leer la master key del
+  -- token (gnome-keyring). Si falta, keytar falla ERR_DLOPEN_FAILED, el server
+  -- no obtiene token y NES (lineas verdes predictivas) muere en silencio.
+  -- Se inyecta AQUI (temprano) para que TODOS los LSP hijos lo hereden.
+  if vim.fn.isdirectory("/nix/store") == 1 then
+    local glib_lib = "/nix/store/y3z5sr16sxd50bgcn2zkn46afn8fy0na-glib-2.88.1/lib"
+    local libsecret_lib = "/nix/store/xplgg6bnv5zglgrf3djibil77nr7b7qm-libsecret-0.21.7/lib"
+    local extra = table.concat({ glib_lib, libsecret_lib }, ":")
+    local cur = vim.env.LD_LIBRARY_PATH or ""
+    vim.env.LD_LIBRARY_PATH = (cur == "" and "" or cur .. ":") .. extra
+  end
   -- Hacer que lazygit use un wrapper con 'zsh -ic' para que cargue ~/.zshrc
   -- (funciones como gitflow y aliases) en comandos ':' y custom commands.
   -- Solo afecta a los procesos que nvim hereda (lazygit, terminal), no al sistema.
