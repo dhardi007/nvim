@@ -394,6 +394,7 @@ return {
         local dapui = require("dapui")
         dapui.setup({
           expand_lines = false,
+          wrap = true, -- wrap en todos los paneles DAP (Scopes, Watches, etc.)
           render = { max_value_lines = 100, max_type_length = 80 },
           controls = { enabled = true, element = "repl" },
           layouts = {
