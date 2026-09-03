@@ -8,6 +8,7 @@ return {
     build = vim.fn.has("win32") == 1 and "powershell -ExecutionPolicy Bypass -File Build.ps1" or "make",
     event = "VeryLazy",
     version = false, -- Never set this value to "*"! Never!
+
     ---@module 'avante'
     ---@type avante.Config
     opts = function(_, opts)
@@ -119,11 +120,11 @@ return {
       local is_linux = vim.fn.has("unix") == 1 and not is_wsl
       local is_termux = vim.fn.isdirectory("/data/data/com.termux") == 1
 
-      -- feature n2: Detectar si faltan avante_templates y auto-build (Windows: .dll, Linux/WSL: .so)
+      -- feature n2: Verificar avante_templates compilados (Makefile los pone en lua/ no build/)
       local lib_ext = is_windows and ".dll" or ".so"
-      local templates_lib = vim.fn.stdpath("data") .. "/lazy/avante.nvim/build/avante_templates" .. lib_ext
+      local templates_lib = vim.fn.stdpath("data") .. "/lazy/avante.nvim/lua/avante_templates" .. lib_ext
       if vim.fn.filereadable(templates_lib) == 0 then
-        vim.notify("Avante templates faltantes. Compilando...", vim.log.levels.WARN)
+        vim.notify("Avante templates no encontrados. Compilando...", vim.log.levels.WARN)
         vim.defer_fn(function()
           vim.cmd("Lazy build avante.nvim")
         end, 1000)
@@ -187,9 +188,44 @@ return {
         end,
       })
 
-      -- 🐛 Fix: avante.nvim recente rompe con log_level numérico (default roto). Forzar string temprano.
-      vim.g.avante = vim.g.avante or {}
-      vim.g.avante.log_level = "WARN"
+      -- 🎨 Re-linkear highlights de Avante suggestions (mismo verde clásico GitHub que NES)
+      -- Avante por defecto linkea AvanteSuggestion a "Comment" (depende del theme).
+      -- Forzamos colores concretos para consistencia visual con Copilot NES.
+      local function set_avante_hl()
+        vim.api.nvim_set_hl(0, "AvanteSuggestion", { fg = "#68d391", bg = "none" })
+
+        vim.api.nvim_set_hl(0, "AvanteAnnotation", { link = "AvanteSuggestion" })
+        vim.api.nvim_set_hl(0, "AvanteToBeDeleted", { fg = "#ffa198", bg = "#391a1a", strikethrough = true })
+      end
+      set_avante_hl()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = set_avante_hl })
+      -- Re-aplicar después de que Avante cargue (VeryLazy) por si setup sobreescribió
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "VeryLazy",
+        callback = set_avante_hl,
+      })
+
+      -- 🔑 Atajos extra para ACEPTAR suggestion (avante no soporta array en "accept",
+      -- así que definimos keymaps adicionales que apuntan al mismo <Plug> que el principal)
+      local avante_suggestion_accept = function()
+        local _, _, sg = require("avante").get()
+        if sg then
+          sg:accept()
+        end
+      end
+      vim.keymap.set(
+        { "n", "v" },
+        "<C-y>",
+        avante_suggestion_accept,
+        { desc = "avante: accept suggestion", silent = true }
+      )
+      -- [fix] <Tab> SOLO en n/v: quitar 'i' para que NO robe el Tab a Supermaven en insert.
+      vim.keymap.set(
+        { "n", "v" },
+        "<C-l>",
+        avante_suggestion_accept,
+        { desc = "avante: accept suggestion", silent = true }
+      )
 
       return {
         -- 🎯 CONFIGURACIÓN BÁSICA
@@ -199,6 +235,8 @@ return {
         ---@alias Mode "agentic" | "legacy"
         ---@type Mode
         mode = "legacy", -- o/ agentic -- 󰄭 GEMINI, Claude, 󰄬 etc SOPORTAN agentic, OLLAMA NO 󰂭 -- The default mode for interaction. "agentic" uses tools to automatically generate code, "legacy" uses the old planning method to generate code.
+        -- Log level to avoid Invalid log level: 3 error from avante/utils
+        -- log_level = "off"        -- 🔥 ELIMINADO / COMENTADO PARA EVITAR EL CRASH:,
         -- 🔕 SILENCIAR NOTIFICACIONES, etiquetas XLS?
         hints = {
           enabled = true, -- Desactiva hints que pueden mostrar XML
@@ -328,12 +366,22 @@ return {
         -- 🎨 COMPORTAMIENTO
         behaviour = {
           enable_cursor_planning_mode = true,
-          auto_suggestions = true, -- Desactiva auto-sugerencias CHOCA con OLLAMA  .
+          -- AUTO-SUGERENCIAS Avante (estilo Cursor Tab, NO Copilot NES): usa OpenRouter.
+          -- Unica via gratuita (north-mini-code:free). Las suggestions no tienen caching
+          -- (envian archivo completo) → usar conservador + toggle manual con <leader>as.
+          auto_suggestions = false,
+          auto_suggestions_respect_ignore = true, -- 🔥 No sugerir en archivos ignorados (menos tokens)
           disable_tools = true, -- 🔥 Esto desactiva tools para TODOS los providers
           minimize_diff = true, -- ✅ Agregá esto para el minimizado de diff [RENDERIZADO]
           auto_set_highlight_group = true,
           auto_set_keymaps = true,
           support_paste_from_clipboard = true,
+        },
+        -- ⏱️ SUGGESTIONS: debounce/throttle altos para no quemar el plan Free de OpenRouter
+        -- (el motor envia el archivo completo por request, sin caching → consume tokens)
+        suggestion = {
+          debounce = 800, -- ms tras dejar de escribir antes de pedir suggestion
+          throttle = 1500, -- ms minimo entre requests (reduce consumo de tokens Free)
         },
         -- File selector configuration
         --- @alias FileSelectorProvider "native" | "fzf" | "mini.pick" | "snacks" | "telescope" | string
@@ -354,10 +402,10 @@ return {
             prev = "[x",
           },
           suggestion = {
-            accept = "<M-y>", -- Alt+y libre: aceptar sugerencia de avante (M-l lo usa copilot, M-CR ahora es de copilot NES)
+            accept = "<M-f>", -- Aceptar sugerencia de avante. NO usar array aqui: avante no soporta arrays en safe_keymap_set. Para multiples atajos, definir keymaps extra fuera apuntando a <Plug>(AvanteSuggestionAccept).
             next = "<M-]>",
             prev = "<M-[>",
-            dismiss = "<C-]>",
+            dismiss = "<S-Tab>", -- Antes C-]
           },
           jump = {
             next = "]]",
@@ -382,6 +430,14 @@ return {
             add_file = "@",
             close = { "<Esc>", "q" },
             close_from_input = nil, -- e.g., { normal = "<Esc>", insert = "<C-d>" }
+          },
+          -- 🔄 TOGGLES DE AVANTE (con <Space> como leader en LazyVim)
+          toggle = {
+            default = "<leader>at", -- Abrir/cerrar sidebar
+            debug = "<leader>ad",
+            selection = "<leader>aC",
+            suggestion = "<leader>aS", -- ✅ Enciende/apaga las AUTO-SUGGESTIONS (usar en proyectos grandes para no gastar tokens Free)
+            repomap = "<leader>aR",
           },
         },
         selection = {

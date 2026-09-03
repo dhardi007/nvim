@@ -110,11 +110,18 @@ return {
     vim.keymap.set({ "n", "i", "v" }, "<M-CR>", accept_nes, {
       noremap = true,
       silent = true,
-      desc = "NES: Aceptar",
+      desc = "NES: Aceptar (Alt-Enter)",
+    })
+
+    -- <C-CR> en N/I/V: aceptar (alias extra, coherente con copilot.lua)
+    vim.keymap.set({ "n", "v" }, "<C-CR>", accept_nes, {
+      noremap = true,
+      silent = true,
+      desc = "NES: Aceptar (Control-Enter)",
     })
 
     -- Esc en NORMAL: limpiar NES o nohlsearch
-    vim.keymap.set("n", "<Esc>", function()
+    vim.keymap.set({ "n" }, "<Esc>", function()
       local ok, nes = pcall(require, "copilot-lsp.nes")
       if ok and nes.clear() then
         return
