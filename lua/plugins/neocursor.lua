@@ -6,7 +6,7 @@
 return {
   -- 1. Apuntar a tu fork con los parches nativos
   "dizzi1222/neocursor.nvim",
-  commit = "2f28b73", -- Opcional: Lazy.nvim descargará siempre lo último de main.
+  commit = "d43b516", -- Opcional: Lazy.nvim descargará siempre lo último de main.
 
   event = "VeryLazy", -- Cargar al arranque: NO InsertEnter (bloquea el disparo en normal)
   opts = {
@@ -55,16 +55,14 @@ return {
 local function dismiss_esc()
   require("neocursor").dismiss()
 end
-vim.keymap.set(
-  { "n", "v" },
-  "<Esc>",
-  dismiss_esc,
-  { noremap = true, silent = true, desc = "neocursor: dismiss" }
-)
+vim.keymap.set({ "n" }, "<Esc>", dismiss_esc, { noremap = true, silent = true, desc = "neocursor: dismiss" })
 
-    vim.keymap.set({ "n", "i", "v" }, "<S-Tab>", function()
-      require("neocursor").dismiss()
-    end, { noremap = true, silent = true, desc = "neocursor: dismiss" })
+    vim.keymap.set(
+      { "n", "i", "v" },
+      "<S-Tab>",
+      dismiss_esc,
+      { noremap = true, silent = true, desc = "neocursor: dismiss" }
+    )
 
     -- 👻 Sugerencia predictiva en NORMAL: CursorHold pide la predicción (jump/ghost),
     -- replicando el disparo que Cursor hace al leer código. Evita conflictos con
