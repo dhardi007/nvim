@@ -57,7 +57,7 @@ return {
         default_filetype_enabled = true,
         key_bindings = {
           accept = "<Tab>",
-          accept_word = "<C-Enter>", -- M-w
+          accept_word = "<C-CR>", -- M-w
           -- suggestion_color = { gui = "#caa99b", cterm = 244 }, -- #808080
           accept_line = "<C-j>",
           clear = "<C-]>", -- C-e

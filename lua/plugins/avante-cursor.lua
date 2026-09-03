@@ -8,6 +8,14 @@ return {
     build = vim.fn.has("win32") == 1 and "powershell -ExecutionPolicy Bypass -File Build.ps1" or "make",
     event = "VeryLazy",
     version = false, -- Never set this value to "*"! Never!
+    -- 🐛 Fix CRÍTICO: avante reciente rompe con log_level numérico (default roto).
+    -- Debe ir en `init` (se ejecuta ANTES de que el plugin cargue), no en `opts`,
+    -- porque plugin/avante.lua lee vim.g.avante.log_level al require avante.utils
+    -- y un número inválido (3) lanza "Invalid log level: 3".
+    init = function()
+      vim.g.avante = vim.g.avante or {}
+      vim.g.avante.log_level = "WARN"
+    end,
     ---@module 'avante'
     ---@type avante.Config
     opts = function(_, opts)
@@ -187,9 +195,44 @@ return {
         end,
       })
 
-      -- 🐛 Fix: avante.nvim recente rompe con log_level numérico (default roto). Forzar string temprano.
-      vim.g.avante = vim.g.avante or {}
-      vim.g.avante.log_level = "WARN"
+      -- 🎨 Re-linkear highlights de Avante suggestions (mismo verde clásico GitHub que NES)
+      -- Avante por defecto linkea AvanteSuggestion a "Comment" (depende del theme).
+      -- Forzamos colores concretos para consistencia visual con Copilot NES.
+      local function set_avante_hl()
+        vim.api.nvim_set_hl(0, "AvanteSuggestion", { fg = "#68d391", bg = "none" })
+
+        vim.api.nvim_set_hl(0, "AvanteAnnotation", { link = "AvanteSuggestion" })
+        vim.api.nvim_set_hl(0, "AvanteToBeDeleted", { fg = "#ffa198", bg = "#391a1a", strikethrough = true })
+      end
+      set_avante_hl()
+      vim.api.nvim_create_autocmd("ColorScheme", { callback = set_avante_hl })
+      -- Re-aplicar después de que Avante cargue (VeryLazy) por si setup sobreescribió
+      vim.api.nvim_create_autocmd("User", {
+        pattern = "VeryLazy",
+        callback = set_avante_hl,
+      })
+
+      -- 🔑 Atajos extra para ACEPTAR suggestion (avante no soporta array en "accept",
+      -- así que definimos keymaps adicionales que apuntan al mismo <Plug> que el principal)
+      local avante_suggestion_accept = function()
+        local _, _, sg = require("avante").get()
+        if sg then
+          sg:accept()
+        end
+      end
+      vim.keymap.set(
+        { "n", "v" },
+        "<C-CR>",
+        avante_suggestion_accept,
+        { desc = "avante: accept suggestion", silent = true }
+      )
+      -- [fix] <Tab> SOLO en n/v: quitar 'i' para que NO robe el Tab a Supermaven en insert.
+      vim.keymap.set(
+        { "n", "v" },
+        "<Tab>",
+        avante_suggestion_accept,
+        { desc = "avante: accept suggestion", silent = true }
+      )
 
       return {
         -- 🎯 CONFIGURACIÓN BÁSICA
@@ -328,12 +371,22 @@ return {
         -- 🎨 COMPORTAMIENTO
         behaviour = {
           enable_cursor_planning_mode = true,
-          auto_suggestions = true, -- Desactiva auto-sugerencias CHOCA con OLLAMA  .
+          -- AUTO-SUGERENCIAS Avante (estilo Cursor Tab, NO Copilot NES): usa OpenRouter.
+          -- Unica via gratuita (north-mini-code:free). Las suggestions no tienen caching
+          -- (envian archivo completo) → usar conservador + toggle manual con <leader>as.
+          auto_suggestions = false,
+          auto_suggestions_respect_ignore = true, -- 🔥 No sugerir en archivos ignorados (menos tokens)
           disable_tools = true, -- 🔥 Esto desactiva tools para TODOS los providers
           minimize_diff = true, -- ✅ Agregá esto para el minimizado de diff [RENDERIZADO]
           auto_set_highlight_group = true,
           auto_set_keymaps = true,
           support_paste_from_clipboard = true,
+        },
+        -- ⏱️ SUGGESTIONS: debounce/throttle altos para no quemar el plan Free de OpenRouter
+        -- (el motor envia el archivo completo por request, sin caching → consume tokens)
+        suggestion = {
+          debounce = 800, -- ms tras dejar de escribir antes de pedir suggestion
+          throttle = 1500, -- ms minimo entre requests (reduce consumo de tokens Free)
         },
         -- File selector configuration
         --- @alias FileSelectorProvider "native" | "fzf" | "mini.pick" | "snacks" | "telescope" | string
@@ -354,10 +407,10 @@ return {
             prev = "[x",
           },
           suggestion = {
-            accept = "<M-y>", -- Alt+y libre: aceptar sugerencia de avante (M-l lo usa copilot, M-CR ahora es de copilot NES)
+            accept = "<M-CR>", -- Aceptar sugerencia de avante. NO usar array aqui: avante no soporta arrays en safe_keymap_set. Para multiples atajos, definir keymaps extra fuera apuntando a <Plug>(AvanteSuggestionAccept).
             next = "<M-]>",
             prev = "<M-[>",
-            dismiss = "<C-]>",
+            dismiss = "<S-Tab>", -- Antes C-]
           },
           jump = {
             next = "]]",
@@ -382,6 +435,14 @@ return {
             add_file = "@",
             close = { "<Esc>", "q" },
             close_from_input = nil, -- e.g., { normal = "<Esc>", insert = "<C-d>" }
+          },
+          -- 🔄 TOGGLES DE AVANTE (con <Space> como leader en LazyVim)
+          toggle = {
+            default = "<leader>at", -- Abrir/cerrar sidebar
+            debug = "<leader>ad",
+            selection = "<leader>aC",
+            suggestion = "<leader>aS", -- ✅ Enciende/apaga las AUTO-SUGGESTIONS (usar en proyectos grandes para no gastar tokens Free)
+            repomap = "<leader>aR",
           },
         },
         selection = {

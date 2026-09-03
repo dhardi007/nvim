@@ -10,21 +10,25 @@ return {
     require("copilot").setup({
       -- Autocompletado inline en INSERT
       suggestion = {
+        -- enabled DEBE ser true: controla enableAutoCompletions del LSP,
+        -- y NES usa el MISMO canal (copilotInlineEdit). Si es false, NES muere.
         enabled = true,
+        -- Lo desactivo para usar Supermaven o Windsruf/Codeiunm + CopilotLSP
         auto_trigger = true,
         debounce = 75,
+        -- Keymaps de sugerencias inline desactivados: Supermaven maneja INSERT.
+        -- NO usar <Tab>/<C-CR>: colisiona con Supermaven (E565) y con NES.
         keymap = {
-          accept = "<Tab>",
-          accept_word = "<C-CR>",
+          -- accept = "<Tab>",
+          -- accept_word = "<C-Enter>", -- [C-CR] Acepta la palabra sugerida (INSERT).
           -- accept_line = "<C-j>",
           -- dismiss = "<C-]>",
           -- next = "<M-]>",
           -- prev = "<M-[>",
         },
-        -- Lo desactivo para usar Supermaven o Windsruf/Codeiunm + CopilotLSP
       },
       panel = {
-        enabled = false, -- Panel lateral con sugerencias alternativas (como el de VSCode)
+        enabled = true, -- Panel lateral con sugerencias alternativas (como el de VSCode)
         keymap = {
           -- jump_prev = "[[",
           -- jump_next = "]]",
@@ -77,10 +81,11 @@ return {
     })
     --
     -- NES: Lineas verdes predictivas en NORMAL (tipo Cursor/VSCode/Antigravity)
-    vim.g.copilot_nes_debounce = 500
+    vim.g.copilot_nes_debounce = 250
 
-    -- Tab en NORMAL: acepta NES o fallback a C-i
-    vim.keymap.set({ "n", "v", "i" }, "<Tab>", function()
+    -- Tab en NORMAL/VISUAL: acepta NES o fallback a C-i.
+    -- NO en INSERT: Supermaven captura <Tab> ahí (accept_suggestion). Evita E565.
+    vim.keymap.set({ "n", "v" }, "<Tab>", function()
       local ok, nes = pcall(require, "copilot-lsp.nes")
       if ok and nes.apply_pending_nes() then
         nes.walk_cursor_end_edit()
@@ -98,13 +103,6 @@ return {
       end
       return false
     end
-
-    -- Ctrl+Enter: acepta NES (normal, insert y visual)
-    vim.keymap.set({ "n", "i", "v" }, "<C-CR>", accept_nes, {
-      noremap = true,
-      silent = true,
-      desc = "NES: Aceptar",
-    })
 
     -- Alt+Enter: acepta NES (normal, insert y visual)
     vim.keymap.set({ "n", "i", "v" }, "<M-CR>", accept_nes, {

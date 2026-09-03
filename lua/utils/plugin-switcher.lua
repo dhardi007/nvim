@@ -51,6 +51,44 @@ local PLUGINS_CONFIG = {
     category = "AI Assistant",
   },
 
+  -- ✨ 🔮🛸 Cursor TAB 👾☄️ - Next Edit Suggestion [ghost lines]
+  cursortab = {
+    name = "CursorTab [ 󰞑 MercuryAPI]",
+    icon = "󱙝",
+    file = "cursortab.lua",
+    category = "🔮🛸 Cursor TAB 👾☄️",
+  },
+  nextedit = {
+    name = "NextEdit [💀Broken]",
+    icon = "󱙝",
+    file = "nextedit.lua",
+    category = "🔮🛸 Cursor TAB 👾☄️",
+  },
+  neocursor = {
+    name = "NeoCursor [󰞑 Need CursorApp  ]",
+    icon = "󱙝",
+    file = "neocursor.lua",
+    category = "🔮🛸 Cursor TAB 👾☄️",
+  },
+  blink_edit = {
+    name = "Blink Edit [💀Broken need: llama-cpp]",
+    icon = "󱙝",
+    file = "blink-edit.lua",
+    category = "🔮🛸 Cursor TAB 👾☄️",
+  },
+  sweep_local = {
+    name = "Sweep [💀Broken need: llama-cpp-python",
+    icon = "󱙝",
+    file = "sweep-nvim.lua",
+    category = "🔮🛸 Cursor TAB 👾☄️",
+  },
+  tabtab = {
+    name = "TabTab [💀Broken]",
+    icon = "󱙝",
+    file = "tabtab.lua",
+    category = "🔮🛸 Cursor TAB 👾☄️",
+  },
+
   -- 🔮 AI Autocompletion
   copilot = {
     name = "Copilot",
@@ -80,6 +118,12 @@ local PLUGINS_CONFIG = {
     name = "FittenCode",
     icon = "",
     file = "ai-fittencode.lua",
+    category = "AI Completion",
+  },
+  neocodeium = {
+    name = "NeoCodeium",
+    icon = "",
+    file = "neocodeium.lua",
     category = "AI Completion",
   },
 
@@ -242,16 +286,19 @@ local function update_disabled_config(plugin_key, should_disable)
     i = i + 1
   end
 
-if not plugin_found then
-     vim.notify("⚠️  Plugin no encontrado en disabled.lua: " .. config.name, vim.log.levels.WARN)
-     return false
-   end
+  if not plugin_found then
+    -- No tiene entrada `enabled =` en disabled.lua → se gestiona por sistema de
+    -- archivos (mover el .lua entre plugins/ y plugins/disabled/). No emitimos
+    -- aviso aquí: move_plugin() hará el fallback y ya notifica su propio
+    -- "Activado/Desactivado". Evita la falsa alarma del toggle por archivo.
+    return false
+  end
 
-   if modified then
-     vim.fn.writefile(content, disabled_file)
-   end
+  if modified then
+    vim.fn.writefile(content, disabled_file)
+  end
 
-   return true
+  return true
 end
 
 -- Move plugin file between lua/plugins/ and lua/plugins/disabled/
@@ -392,6 +439,7 @@ function M.interactive_toggle()
 
   -- Ordenar categorías
   local category_order = {
+    "🔮🛸 Cursor TAB 👾☄️",
     "AI Assistant",
     "AI Completion",
     "OpenCode",
@@ -502,6 +550,10 @@ end
 
 function M.toggle_discord()
   M.toggle_by_category("Discord")
+end
+
+function M.toggle_cursor_tab()
+  M.toggle_by_category("🔮🛸 Cursor TAB 👾☄️")
 end
 
 -- ⭐ FUNCIÓN PÚBLICA: Obtener estado de un plugin

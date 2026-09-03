@@ -49,6 +49,11 @@ return {
     "supermaven-inc/supermaven-nvim", -- 9/10 | Codeium: 2/10
     enabled = true, -- Muy buen autocompletado, aunque le falte contexto general, recuerda conversaciones pasadas. GRATIS
   },
+  {
+    "monkoose/neocodeium", -- 8/10 | Autocompletado gratis Windsurf/Codeium, sin API key (solo :NeoCodeium auth)
+    -- Gestionado por plugin-switcher via movimiento de archivo (como copilot/supermaven)
+    enabled = false, -- Keymaps con Alt (<A-f>/<A-w>/<A-a>), no pisa Tab. Ver el spec en plugins/
+  },
   -- {
   --   "codota/tabnine-nvim", -- 1/10 | Codeium: 2/10
   --   enabled = false, -- el autocompletado es mierda (no me funciona), y requiere app externa :/
