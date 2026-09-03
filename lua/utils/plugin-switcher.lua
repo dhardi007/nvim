@@ -45,45 +45,45 @@ local PLUGINS_CONFIG = {
   },
   -- Copilot NES - Next Edit Suggestion [NORMAL mode]
   copilot_nes = {
-    name = "Copilot NES",
+    name = "Copilot NES [ 󰞑 ] N.3",
     icon = "󰯈",
     file = "copilot.lua",
-    category = "AI Assistant",
+    category = "🔮🛸 Cursor TAB 👾☄️",
   },
 
   -- ✨ 🔮🛸 Cursor TAB 👾☄️ - Next Edit Suggestion [ghost lines]
   cursortab = {
-    name = "CursorTab [ 󰞑 MercuryAPI]",
+    name = "CursorTab [ 󰞑 ] N.2",
     icon = "󱙝",
     file = "cursortab.lua",
     category = "🔮🛸 Cursor TAB 👾☄️",
   },
   nextedit = {
-    name = "NextEdit [💀Broken]",
+    name = "NextEdit [💀]",
     icon = "󱙝",
     file = "nextedit.lua",
     category = "🔮🛸 Cursor TAB 👾☄️",
   },
   neocursor = {
-    name = "NeoCursor [󰞑 Need CursorApp  ]",
+    name = "NeoCursor [ 󰞑 ] N.1",
     icon = "󱙝",
     file = "neocursor.lua",
     category = "🔮🛸 Cursor TAB 👾☄️",
   },
   blink_edit = {
-    name = "Blink Edit [💀Broken need: llama-cpp]",
+    name = "Blink Edit [💀]",
     icon = "󱙝",
     file = "blink-edit.lua",
     category = "🔮🛸 Cursor TAB 👾☄️",
   },
   sweep_local = {
-    name = "Sweep [💀Broken need: llama-cpp-python",
+    name = "Sweep [💀]",
     icon = "󱙝",
     file = "sweep-nvim.lua",
     category = "🔮🛸 Cursor TAB 👾☄️",
   },
   tabtab = {
-    name = "TabTab [💀Broken]",
+    name = "TabTab [💀]",
     icon = "󱙝",
     file = "tabtab.lua",
     category = "🔮🛸 Cursor TAB 👾☄️",

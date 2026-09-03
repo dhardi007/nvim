@@ -61,7 +61,7 @@ return {
       -- partial_accept desactivado: <S-Tab> en los otros plugins es REJECT, así
       -- que lo unificamos a rechazar y perdemos el aceptar-parcial de cursortab.
       keymaps = {
-        accept = "<Tab>",
+        accept = "<C-y>",
         partial_accept = false,
         trigger = false,
       },
@@ -69,7 +69,7 @@ return {
       ui = {
         completions = {
           addition_style = "dimmed",
-          fg_opacity = 0.6,
+          fg_opacity = 1.0, -- 1.0 => factor 0 => sin blend: fondo verde #238636 sólido (no atenuado)
         },
         jump = {
           symbol = "󰁔",
@@ -81,10 +81,12 @@ return {
       behavior = {
         idle_completion_delay = 50,
         text_change_debounce = 50,
-        max_visible_lines = 12,
-        -- Activo en INSERT + NORMAL (el usuario quiere ambos; si prefiere solo
-        -- NORMAL para no pisar Supermaven, reducir a { "normal" }).
-        enabled_modes = { "insert", "normal" },
+        max_visible_lines = 50, -- más preview de next-edit en normal
+        -- 👻 SOLO NORMAL (líneas verdes tipo NES / next-edit).
+        -- Al quitar "insert" se apaga el autocompletado fantasma en INSERT
+        -- (events.lua filtra TextChangedI/CursorMovedI → return), pero el
+        -- cursor_prediction de NORMAL sigue enviando eventos → líneas verdes.
+        enabled_modes = { "normal", "insert" },
         cursor_prediction = {
           enabled = true,
           auto_advance = true,
@@ -101,6 +103,14 @@ return {
       vim.api.nvim_set_hl(0, "CursorTabAddition", { fg = "#ffffff", bg = "#238636" })
       -- Rojo GitHub (#391a1a) para texto eliminado
       vim.api.nvim_set_hl(0, "CursorTabDeletion", { fg = "#ffa198", bg = "#391a1a" })
+      -- Ghost text de completado inline (texto justo tras el cursor):
+      -- grupo VÁLIDO = CursorTabCompletion. bg #238636 para que el ghost inline
+      -- tenga fondo verde (a petición).
+      vim.api.nvim_set_hl(0, "CursorTabCompletion", { bg = "#238636" })
+      vim.api.nvim_set_hl(0, "CursorTabModification", { bg = "#238636" })
+      vim.api.nvim_set_hl(0, "CursorTabJumpSymbol", { bg = "#238636" })
+      vim.api.nvim_set_hl(0, "CursorTabJumpText", { bg = "#238636" })
+      vim.api.nvim_set_hl(0, "Completions", { bg = "#238636" })
     end
     set_cursortab_hl()
     vim.api.nvim_create_autocmd("ColorScheme", { callback = set_cursortab_hl })
@@ -114,16 +124,18 @@ return {
 
     -- <M-CR> en NORMAL/INSERT/VISUAL: aceptar predicción o fallback a C-i
     vim.keymap.set({ "n", "i", "v" }, "<M-CR>", function()
-      if ct.accept() then
-        return nil
-      end
-      return "<C-i>"
-    end, { expr = true, noremap = true, desc = "cursortab: Aceptar o C-i" })
+      ct.accept()
+    end, { noremap = true, silent = true, desc = "cursortab: Aceptar (Alt-Enter)" })
 
     -- <C-CR> en N/I/V: aceptar (alias extra, coherente con copilot.lua)
-    vim.keymap.set({ "n", "i", "v" }, "<C-CR>", function()
+    vim.keymap.set({ "n", "v" }, "<C-CR>", function()
       ct.accept()
-    end, { noremap = true, silent = true, desc = "cursortab: Aceptar (C-CR)" })
+    end, { noremap = true, silent = true, desc = "cursortab: Aceptar (Control-Enter)" })
+
+    -- <Tab> en N/I/V: aceptar (alias extra, coherente con copilot.lua)
+    vim.keymap.set({ "n", "v" }, "<Tab>", function()
+      ct.accept()
+    end, { noremap = true, silent = true, desc = "cursortab: Aceptar (Tab)" })
 
     -- <S-Tab> en N/I/V: rechazar (set NES consistente). Envía el mismo evento
     -- "esc" que el <Esc> built-in (on_escape → daemon.send_event("esc")).
@@ -131,5 +143,9 @@ return {
     vim.keymap.set({ "n", "i", "v" }, "<S-Tab>", function()
       ct_daemon.send_event("esc")
     end, { noremap = true, silent = true, desc = "cursortab: Rechazar (S-Tab)" })
+
+    vim.keymap.set({ "n" }, "<Esc>", function()
+      ct_daemon.send_event("esc")
+    end, { noremap = true, silent = true, desc = "cursortab: Rechazar (Esc)" })
   end,
 }

@@ -227,16 +227,16 @@ return {
         { desc = "avante: accept suggestion", silent = true }
       )
 
-       return {
-         -- 🎯 CONFIGURACIÓN BÁSICA
-         --   ---@alias Provider "claude" | "openai" | "azure" | "gemini" | "cohere" | "copilot" | string
-         ---@type Provider
-         provider = "openrouter", -- /o ollama -- Provider por defecto (Claude roto) | Ollma era god hasta que la nacion de Openrouter llego a tumbar su suscripcion. | Openrouter 👑
-         ---@alias Mode "agentic" | "legacy"
-         ---@type Mode
-         mode = "legacy", -- o/ agentic -- 󰄭 GEMINI, Claude, 󰄬 etc SOPORTAN agentic, OLLAMA NO 󰂭 -- The default mode for interaction. "agentic" uses tools to automatically generate code, "legacy" uses the old planning method to generate code.
-         -- Log level to avoid Invalid log level: 3 error from avante/utils
-         log_level = "off",
+      return {
+        -- 🎯 CONFIGURACIÓN BÁSICA
+        --   ---@alias Provider "claude" | "openai" | "azure" | "gemini" | "cohere" | "copilot" | string
+        ---@type Provider
+        provider = "openrouter", -- /o ollama -- Provider por defecto (Claude roto) | Ollma era god hasta que la nacion de Openrouter llego a tumbar su suscripcion. | Openrouter 👑
+        ---@alias Mode "agentic" | "legacy"
+        ---@type Mode
+        mode = "legacy", -- o/ agentic -- 󰄭 GEMINI, Claude, 󰄬 etc SOPORTAN agentic, OLLAMA NO 󰂭 -- The default mode for interaction. "agentic" uses tools to automatically generate code, "legacy" uses the old planning method to generate code.
+        -- Log level to avoid Invalid log level: 3 error from avante/utils
+        -- log_level = "off"        -- 🔥 ELIMINADO / COMENTADO PARA EVITAR EL CRASH:,
         -- 🔕 SILENCIAR NOTIFICACIONES, etiquetas XLS?
         hints = {
           enabled = true, -- Desactiva hints que pueden mostrar XML

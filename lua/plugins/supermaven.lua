@@ -9,11 +9,11 @@ return {
   config = function()
     require("supermaven-nvim").setup({
       keymaps = {
-        accept_suggestion = "<Tab>",
+        accept_suggestion = "<Tab>", -- Supermaven maneja INSERT con <Tab>
         clear_suggestion = "<C-]>",
-        accept_word = "<C-CR>", -- antes estaba como C-j
-        -- El keymap 'dismiss_suggestion' ya no se menciona en la config por defecto,
-        -- pero puedes mantenerlo si lo necesitas, o usar la opción por defecto si existe.
+        -- NO mapear accept_word a <C-CR>: cursortab/sweep usan <C-CR> en n/i/v
+        -- para next-edit. Un <C-CR> ambiguo en INSERT rompe ambos (patrón de copilot.lua).
+        accept_word = "<C-CR>",
       },
       ignore_filetypes = { cpp = true },
       color = {
@@ -24,10 +24,8 @@ return {
       log_level = "info",
       disable_inline_completion = false,
       disable_keymaps = false,
-      condition = function()
-        return false -- El valor por defecto ahora es usar `require("supermaven-nvim").setup({})`
-        -- y la lógica condicional se define en el `condition`
-      end,
+      -- Sin condition: usar el comportamiento por defecto (equivalente a copilot.lua,
+      -- que funciona bien). NO definir `condition = () => false` — mata las sugerencias.
     })
   end,
 }

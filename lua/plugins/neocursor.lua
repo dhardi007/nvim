@@ -6,7 +6,7 @@
 return {
   -- 1. Apuntar a tu fork con los parches nativos
   "dizzi1222/neocursor.nvim",
-  commit = "d43b516", -- Opcional: Lazy.nvim descargará siempre lo último de main.
+  -- commit = "d43b516", -- Opcional: Lazy.nvim descargará siempre lo último de main.
 
   event = "VeryLazy", -- Cargar al arranque: NO InsertEnter (bloquea el disparo en normal)
   opts = {
@@ -50,18 +50,36 @@ return {
       { noremap = true, silent = true, desc = "neocursor: accept/jump" }
     )
 
--- 👻 Descartar ghost text / predicciones con <Esc> en NORMAL y VISUAL
--- Llama a dismiss() de forma agnóstica al modo para limpiar el estado visual.
-local function dismiss_esc()
-  require("neocursor").dismiss()
-end
-vim.keymap.set({ "n" }, "<Esc>", dismiss_esc, { noremap = true, silent = true, desc = "neocursor: dismiss" })
+    -- 👻 Descartar ghost text / predicciones con <Esc> o <S-Tab> en NORMAL, INSERT y VISUAL
+    -- Llama a dismiss() de Neocursor y limpia el estado de hlsearch.
+    local function dismiss_esc()
+      -- 1. Descarta la sugerencia de Neocursor
+      require("neocursor").dismiss()
 
+      -- 2. Limpia el resaltado de búsqueda (hlsearch) de Neovim
+      vim.cmd("noh")
+
+      -- 3. Si estás en modo Insertar o Visual, forzamos la salida al modo Normal de forma limpia
+      local mode = vim.api.nvim_get_mode().mode
+      if mode:match("^[vV]") or mode == "i" then
+        local esc = vim.api.nvim_replace_termcodes("<Esc>", true, false, true)
+        vim.api.nvim_feedkeys(esc, "n", false)
+      end
+    end
+
+    -- Mapeamos tanto <S-Tab> como <Esc> para unificar el comportamiento
     vim.keymap.set(
       { "n", "i", "v" },
       "<S-Tab>",
       dismiss_esc,
-      { noremap = true, silent = true, desc = "neocursor: dismiss" }
+      { noremap = true, silent = true, desc = "neocursor: dismiss and clear hlsearch" }
+    )
+
+    vim.keymap.set(
+      { "n", "i", "v" },
+      "<Esc>",
+      dismiss_esc,
+      { noremap = true, silent = true, desc = "neocursor: dismiss and clear hlsearch" }
     )
 
     -- 👻 Sugerencia predictiva en NORMAL: CursorHold pide la predicción (jump/ghost),
