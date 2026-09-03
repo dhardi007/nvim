@@ -8,14 +8,7 @@ return {
     build = vim.fn.has("win32") == 1 and "powershell -ExecutionPolicy Bypass -File Build.ps1" or "make",
     event = "VeryLazy",
     version = false, -- Never set this value to "*"! Never!
-    -- 🐛 Fix CRÍTICO: avante reciente rompe con log_level numérico (default roto).
-    -- Debe ir en `init` (se ejecuta ANTES de que el plugin cargue), no en `opts`,
-    -- porque plugin/avante.lua lee vim.g.avante.log_level al require avante.utils
-    -- y un número inválido (3) lanza "Invalid log level: 3".
-    init = function()
-      vim.g.avante = vim.g.avante or {}
-      vim.g.avante.log_level = "WARN"
-    end,
+
     ---@module 'avante'
     ---@type avante.Config
     opts = function(_, opts)
@@ -222,26 +215,28 @@ return {
       end
       vim.keymap.set(
         { "n", "v" },
-        "<C-CR>",
+        "<C-y>",
         avante_suggestion_accept,
         { desc = "avante: accept suggestion", silent = true }
       )
       -- [fix] <Tab> SOLO en n/v: quitar 'i' para que NO robe el Tab a Supermaven en insert.
       vim.keymap.set(
         { "n", "v" },
-        "<Tab>",
+        "<C-l>",
         avante_suggestion_accept,
         { desc = "avante: accept suggestion", silent = true }
       )
 
-      return {
-        -- 🎯 CONFIGURACIÓN BÁSICA
-        --   ---@alias Provider "claude" | "openai" | "azure" | "gemini" | "cohere" | "copilot" | string
-        ---@type Provider
-        provider = "openrouter", -- /o ollama -- Provider por defecto (Claude roto) | Ollma era god hasta que la nacion de Openrouter llego a tumbar su suscripcion. | Openrouter 👑
-        ---@alias Mode "agentic" | "legacy"
-        ---@type Mode
-        mode = "legacy", -- o/ agentic -- 󰄭 GEMINI, Claude, 󰄬 etc SOPORTAN agentic, OLLAMA NO 󰂭 -- The default mode for interaction. "agentic" uses tools to automatically generate code, "legacy" uses the old planning method to generate code.
+       return {
+         -- 🎯 CONFIGURACIÓN BÁSICA
+         --   ---@alias Provider "claude" | "openai" | "azure" | "gemini" | "cohere" | "copilot" | string
+         ---@type Provider
+         provider = "openrouter", -- /o ollama -- Provider por defecto (Claude roto) | Ollma era god hasta que la nacion de Openrouter llego a tumbar su suscripcion. | Openrouter 👑
+         ---@alias Mode "agentic" | "legacy"
+         ---@type Mode
+         mode = "legacy", -- o/ agentic -- 󰄭 GEMINI, Claude, 󰄬 etc SOPORTAN agentic, OLLAMA NO 󰂭 -- The default mode for interaction. "agentic" uses tools to automatically generate code, "legacy" uses the old planning method to generate code.
+         -- Log level to avoid Invalid log level: 3 error from avante/utils
+         log_level = "off",
         -- 🔕 SILENCIAR NOTIFICACIONES, etiquetas XLS?
         hints = {
           enabled = true, -- Desactiva hints que pueden mostrar XML
@@ -407,7 +402,7 @@ return {
             prev = "[x",
           },
           suggestion = {
-            accept = "<M-CR>", -- Aceptar sugerencia de avante. NO usar array aqui: avante no soporta arrays en safe_keymap_set. Para multiples atajos, definir keymaps extra fuera apuntando a <Plug>(AvanteSuggestionAccept).
+            accept = "<M-f>", -- Aceptar sugerencia de avante. NO usar array aqui: avante no soporta arrays en safe_keymap_set. Para multiples atajos, definir keymaps extra fuera apuntando a <Plug>(AvanteSuggestionAccept).
             next = "<M-]>",
             prev = "<M-[>",
             dismiss = "<S-Tab>", -- Antes C-]
