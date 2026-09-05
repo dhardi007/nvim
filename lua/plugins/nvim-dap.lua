@@ -283,51 +283,58 @@ return {
           })
 
           -- TS con imports SIN extension ("./talent" -> .ts/.d.ts): Node nativo
-          -- (strip-types) NO los resuelve, ESM exige extension explicita. Si el
-          -- proyecto tiene ts-node en node_modules/.bin, se agrega esta config
-          -- que los resuelve eligiendo el loader segun el tipo de MODULO:
+          -- (strip-types) NO los resuelve, ESM exige extension explicita. Esta
+          -- config va SIEMPRE en ts/tsx y resuelve el proyecto en RUNTIME (no
+          -- al cargar el plugin): el root se toma del buffer activo al lanzar,
+          -- no del cwd/buffer de arranque de nvim. Asi la opcion aparece aunque
+          -- hayas abierto nvim desde ~ o con otro archivo.
           --   - package.json SIN "type": "module" (CommonJS, ej. Express/TypeORM
           --     con ts-node-dev) -> `node -r ts-node/register/transpile-only`
           --     (mismo registro que ts-node-dev; fuerza require()/import a CJS
           --     y evita el ciclo "Cannot require() ES Module in a cycle").
           --   - package.json con "type": "module" -> `--loader ts-node/esm`.
-          -- El proyecto se resuelve desde el BUFFER abierto (no del cwd de
-          -- arranque) subiendo hasta un tsconfig.json, para que la opcion
-          -- aparezca aunque Neovim se abra desde ~/workspace o ~.
-          local project_root = vim.fs.root(0, "tsconfig.json")
-            or vim.fn.getcwd()
-          local ts_node_bin = project_root .. "/node_modules/.bin/ts-node"
-          if vim.fn.filereadable(ts_node_bin) == 1 then
-            local pkg_json = io.open(project_root .. "/package.json", "r")
-            local is_esm = false
-            if pkg_json then
-              local pkg_content = pkg_json:read("*a")
-              pkg_json:close()
-              is_esm = pkg_content:match('"type"%s*:%s*"module"') ~= nil
-            end
-            local ts_runtime_args = is_esm
-                and { "--loader", "ts-node/esm", "--no-warnings" }
-              or { "-r", "ts-node/register/transpile-only", "--no-warnings" }
-            local ts_name = is_esm
-                and "Launch TS (ts-node: ESM resolve imports)"
-              or "Launch TS (ts-node: CJS resolve imports)"
-            table.insert(configs, {
-              type = "pwa-node",
-              request = "launch",
-              name = ts_name,
-              runtimeExecutable = "node",
-              runtimeArgs = ts_runtime_args,
-              program = function()
-                return vim.fn.expand("%:p")
-              end,
-              cwd = function()
-                return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
-              end,
-              environment = { TS_NODE_PROJECT = project_root .. "/tsconfig.json" },
-              stopOnEntry = true,
-              sourceMaps = true,
-            })
-          end
+          -- Si ts-node no esta en node_modules, se lanza un error claro al
+          -- ejecutar (el hint de typescript recomienda instalarlo con pnpm/npm).
+          table.insert(configs, {
+            type = "pwa-node",
+            request = "launch",
+            name = "Launch TS (ts-node resolve imports)",
+            runtimeExecutable = "node",
+            runtimeArgs = function()
+              local proj_root = vim.fs.root(0, "tsconfig.json") or vim.fn.getcwd()
+              local ts_bin = proj_root .. "/node_modules/.bin/ts-node"
+              if vim.fn.filereadable(ts_bin) ~= 1 then
+                error(
+                  "ts-node no encontrado en " .. ts_bin
+                    .. ". Instalalo primero: `pnpm add -D ts-node-dev` (o `npm i -D ts-node-dev`)."
+                )
+              end
+              local pkg_f = io.open(proj_root .. "/package.json", "r")
+              local is_esm = false
+              if pkg_f then
+                local pkg_c = pkg_f:read("*a")
+                pkg_f:close()
+                is_esm = pkg_c:match('"type"%s*:%s*"module"') ~= nil
+              end
+              if is_esm then
+                return { "--loader", "ts-node/esm", "--no-warnings" }
+              end
+              return { "-r", "ts-node/register/transpile-only", "--no-warnings" }
+            end,
+            program = function()
+              return vim.fn.expand("%:p")
+            end,
+            cwd = function()
+              return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
+            end,
+            environment = function()
+              local proj_root = vim.fs.root(0, "tsconfig.json") or vim.fn.getcwd()
+              return { TS_NODE_PROJECT = proj_root .. "/tsconfig.json" }
+            end,
+            stopOnEntry = true,
+            sourceMaps = true,
+            resolveSourceMapLocations = { "!**/node_modules/**" },
+          })
         end
 
         vim.list_extend(configs, {
@@ -745,9 +752,15 @@ return {
             end
           end
           if is_backend or (ts_root and not is_vite) then
+            local ts_bin = ts_root and (ts_root .. "/node_modules/.bin/ts-node") or nil
+            local has_ts_node = ts_bin and vim.fn.filereadable(ts_bin) == 1
+            if not has_ts_node then
+              return {
+                "Debug TS Backend (Express/Node): 1) Este proyecto no tiene ts-node; instalalo como devDependency: `pnpm add -D ts-node-dev` (o `npm i -D ts-node-dev`); trae ts-node + el loader que resuelve imports sin extensión. Sin él, 'Launch TS (ts-node resolve imports)' fallará con un error claro. 2) Levantá la BD antes si el server la necesita: `~/cloud-sql-proxy --port 5433 cic-ptd-dev:us-east1:cic-ptd-dev`. 3) <leader>dc → elige 'Launch TS (ts-node resolve imports)' (elige CJS o ESM según el package.json; en CommonJS NO da 'Cannot require() ES Module in a cycle'). 4) Si el server ya corre, también podés 'Attach to process'. 5) .d.ts NO se ejecuta (solo tipos).",
+              }
+            end
             return {
-              "Debug TS Backend (Express/Node): 1) Levantá la BD antes si el server la necesita: `~/cloud-sql-proxy --port 5433 cic-ptd-dev:us-east1:cic-ptd-dev`. 2) <leader>dc → elige 'Launch TS (ts-node: CJS resolve imports)' (modo CommonJS, igual que ts-node-dev; NO uses ESM: da 'Cannot require() ES Module in a cycle'). 3) Si el server ya corre con ts-node-dev, también podés 'Attach to process'. 4) .d.ts NO se ejecuta (solo tipos).",
-              "Backend TS: el error 'Cannot require() ES Module in a cycle' = forzaste ts-node/esm en un proyecto CommonJS. Usá 'Launch TS (ts-node: CJS resolve imports)' o 'Attach to process'. 'Launch file' falla porque Node no resuelve imports sin extensión ('./libs/Swagger').",
+              "Debug TS Backend (Express/Node): 1) Levantá la BD antes si el server la necesita: `~/cloud-sql-proxy --port 5433 cic-ptd-dev:us-east1:cic-ptd-dev`. 2) <leader>dc → elige 'Launch TS (ts-node resolve imports)' (elige CJS o ESM según el package.json; en CommonJS NO da 'Cannot require() ES Module in a cycle'). 3) Si el server ya corre con ts-node-dev, también podés 'Attach to process'. 4) .d.ts NO se ejecuta (solo tipos).",
             }
           end
           return {
