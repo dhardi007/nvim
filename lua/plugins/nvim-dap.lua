@@ -285,23 +285,45 @@ return {
           -- TS con imports SIN extension ("./talent" -> .ts/.d.ts): Node nativo
           -- (strip-types) NO los resuelve, ESM exige extension explicita. Si el
           -- proyecto tiene ts-node en node_modules/.bin, se agrega esta config
-          -- que los resuelve con el loader ESM de ts-node. Si no existe, se omite
-          -- (el hint de typescript explica como activarla).
-          local ts_node_bin = vim.fn.getcwd() .. "/node_modules/.bin/ts-node"
+          -- que los resuelve eligiendo el loader segun el tipo de MODULO:
+          --   - package.json SIN "type": "module" (CommonJS, ej. Express/TypeORM
+          --     con ts-node-dev) -> `node -r ts-node/register/transpile-only`
+          --     (mismo registro que ts-node-dev; fuerza require()/import a CJS
+          --     y evita el ciclo "Cannot require() ES Module in a cycle").
+          --   - package.json con "type": "module" -> `--loader ts-node/esm`.
+          -- El proyecto se resuelve desde el BUFFER abierto (no del cwd de
+          -- arranque) subiendo hasta un tsconfig.json, para que la opcion
+          -- aparezca aunque Neovim se abra desde ~/workspace o ~.
+          local project_root = vim.fs.root(0, "tsconfig.json")
+            or vim.fn.getcwd()
+          local ts_node_bin = project_root .. "/node_modules/.bin/ts-node"
           if vim.fn.filereadable(ts_node_bin) == 1 then
+            local pkg_json = io.open(project_root .. "/package.json", "r")
+            local is_esm = false
+            if pkg_json then
+              local pkg_content = pkg_json:read("*a")
+              pkg_json:close()
+              is_esm = pkg_content:match('"type"%s*:%s*"module"') ~= nil
+            end
+            local ts_runtime_args = is_esm
+                and { "--loader", "ts-node/esm", "--no-warnings" }
+              or { "-r", "ts-node/register/transpile-only", "--no-warnings" }
+            local ts_name = is_esm
+                and "Launch TS (ts-node: ESM resolve imports)"
+              or "Launch TS (ts-node: CJS resolve imports)"
             table.insert(configs, {
               type = "pwa-node",
               request = "launch",
-              name = "Launch TS (ts-node: resolve imports)",
+              name = ts_name,
               runtimeExecutable = "node",
-              runtimeArgs = { "--loader", "ts-node/esm", "--no-warnings" },
+              runtimeArgs = ts_runtime_args,
               program = function()
                 return vim.fn.expand("%:p")
               end,
               cwd = function()
                 return vim.fn.fnamemodify(vim.fn.expand("%:p"), ":h")
               end,
-              environment = { TS_NODE_PROJECT = vim.fn.getcwd() .. "/tsconfig.json" },
+              environment = { TS_NODE_PROJECT = project_root .. "/tsconfig.json" },
               stopOnEntry = true,
               sourceMaps = true,
             })
@@ -707,6 +729,27 @@ return {
           }
         end,
         typescript = function()
+          -- Detecta si el buffer pertenece a un backend Node (Express/TypeORM,
+          -- tsconfig CommonJS) o a un frontend Vite/React. El hint cambia para
+          -- no sugerir Launch Chrome en un servidor que corre en Node.
+          local ts_root = vim.fs.root(0, "tsconfig.json")
+          local is_backend = false
+          local is_vite = false
+          if ts_root then
+            local pkg_file = io.open(ts_root .. "/package.json", "r")
+            if pkg_file then
+              local pkg = pkg_file:read("*a")
+              pkg_file:close()
+              is_vite = pkg:match('"vite"') ~= nil
+              is_backend = (pkg:match('"express"') or pkg:match('"typeorm"') or pkg:match('"fastify"')) ~= nil
+            end
+          end
+          if is_backend or (ts_root and not is_vite) then
+            return {
+              "Debug TS Backend (Express/Node): 1) Levantá la BD antes si el server la necesita: `~/cloud-sql-proxy --port 5433 cic-ptd-dev:us-east1:cic-ptd-dev`. 2) <leader>dc → elige 'Launch TS (ts-node: CJS resolve imports)' (modo CommonJS, igual que ts-node-dev; NO uses ESM: da 'Cannot require() ES Module in a cycle'). 3) Si el server ya corre con ts-node-dev, también podés 'Attach to process'. 4) .d.ts NO se ejecuta (solo tipos).",
+              "Backend TS: el error 'Cannot require() ES Module in a cycle' = forzaste ts-node/esm en un proyecto CommonJS. Usá 'Launch TS (ts-node: CJS resolve imports)' o 'Attach to process'. 'Launch file' falla porque Node no resuelve imports sin extensión ('./libs/Swagger').",
+            }
+          end
           return {
             "Debug TS (Vite/React = NO es un script node): 1) PRIMERO levantá el proyecto → `npm run dev` (o tu runner, ej. <leader>l s); el debugger va a atacar el bundler, sin eso los breakpoints de .ts/.tsx no existen todavia. 2) <leader>dc → elige 'Launch Chrome (React/Dev)' (abre Chromium en :5173). 3) Un archivo .ts SUELTO (sin bundler/backend) sí funciona con 'Launch TS' directo: es una decision de contexto — script standalone no necesita pre-requisito; app Vite sí (como PHP con su servidor Xdebug). 4) .d.ts NO se ejecuta (solo tipos).",
             "TS: fallo al correr directo con pwa-node = la app corre sobre Vite (browser), no sobre Node. Node no resuelve tipos ('PayloadAction') ni imports bundler. Levantá el proyecto (npm run dev) y usá Launch Chrome.",
