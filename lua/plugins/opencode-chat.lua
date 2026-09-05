@@ -32,14 +32,16 @@ local function tui_send(text, focus)
   return false
 end
 
--- opencode se abre en una terminal snacks.terminal. El toggle reutiliza la
--- MISMA instancia: snacks.terminal indexa la terminal por {cmd, cwd, env,
--- count}. Fijamos una sola cwd al arrancar para que el id sea estable; así, al
--- cambiar de proyecto/directorio SIEMPRE se enfoca/oculta la misma sesión de
--- opencode y nunca se crea una segunda. El puerto se fija (4096) para que
+-- opencode se abre en una terminal snacks.terminal. Fijamos una sola cwd al
+-- arrancar para que el id sea estable; así, al cambiar de proyecto/directorio
+-- SIEMPRE se enfoca/oculta la misma sesión. El puerto se fija (4096) para que
 -- coincida con `url` del server y el plugin conecte SIEMPRE a la misma
--- instancia (sin auto-discovery).
+-- instancia (sin auto-discovery). La terminal se busca por su cmd real
+-- (opencode) y NO con `snacks.terminal.get(..., {create=true})`: ese get crea
+-- una terminal NUEVA aunque el server ya viva, spawneando otro `opencode
+-- --port` que no puede bindear 4096 y queda zombie.
 local OC_CMD = "opencode --port 4096"
+local OC_ATTACH = "opencode attach http://localhost:4096"
 local OC_OPTS = {
   cwd = vim.loop.cwd(), -- estable: no cambiar con el cwd actual de Neovim
   win = {
@@ -48,16 +50,68 @@ local OC_OPTS = {
   },
 }
 
+-- ¿Hay un server opencode escuchando en 4096?
+local function server_running()
+  local ok = vim.fn.system("curl -sf -m 2 -o /dev/null http://localhost:4096/")
+  return vim.v.shell_error == 0 and ok == ""
+end
+
+-- Busca la terminal TUI opencode viva registrada en snacks.terminal.
+local function find_opencode_term()
+  local snacks = require("snacks.terminal")
+  for _, term in ipairs(snacks.list()) do
+    local cmd = term.cmd
+    if type(cmd) == "string" and cmd:match("opencode") then
+      return term
+    end
+  end
+  return nil
+end
+
+-- Limpia buffers terminal opencode muertos (canal cerrado) que quedan de
+-- procesos que ya no existen (zombies tipo term://166836:opencode).
+local function cleanup_dead_opencode()
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.bo[buf].buftype == "terminal" and vim.api.nvim_buf_get_name(buf):match("opencode") then
+      local chan = vim.bo[buf].channel
+      if not chan or chan <= 0 then
+        pcall(vim.api.nvim_buf_delete, buf, { force = true })
+      end
+    end
+  end
+end
+
+-- Abre la terminal correcta según el estado del server:
+--   - server vivo:  `opencode attach` (conecta al 4096, NO spawna otro bind)
+--   - server muerto: `opencode --port 4096` (arranca server + TUI)
+local function open_opencode()
+  local snacks = require("snacks.terminal")
+  if server_running() then
+    snacks.open(OC_ATTACH, OC_OPTS)
+  else
+    snacks.open(OC_CMD, OC_OPTS)
+  end
+end
+
 -- Toggle real: muestra si está oculta, oculta si está visible, crea si no existe.
 local function toggle_opencode()
-  require("snacks.terminal").toggle(OC_CMD, OC_OPTS)
+  cleanup_dead_opencode()
+  local term = find_opencode_term()
+  if term then
+    term:toggle()
+  else
+    open_opencode()
+  end
 end
 
 -- Focus: muestra y enfoca la terminal ya creada (o la crea si no hay ninguna).
 local function focus_opencode()
-  local term = require("snacks.terminal").get(OC_CMD, OC_OPTS)
+  cleanup_dead_opencode()
+  local term = find_opencode_term()
   if term then
     term:show():focus()
+  else
+    open_opencode()
   end
 end
 
@@ -285,15 +339,6 @@ return {
 
   config = function()
     ---@type opencode.Opts
-    -- Solo levantar un servidor opencode si NO hay ninguno escuchando en el
-    -- puerto. Sin esto, cada toggle/ask sin terminal abierta spawns OTRO
-    -- `opencode --port`, se acumulan procesos huérfanos y el puerto se satura
-    -- -> el envío del buffer falla ("solo funciona 1 vez y luego mas nunca").
-    local function server_running()
-      local ok = vim.fn.system("curl -sf -m 2 -o /dev/null http://localhost:4096/")
-      return vim.v.shell_error == 0 and ok == ""
-    end
-
     vim.g.opencode_opts = {
       server = {
         -- Conecta DIRECTO al server opencode --port existente (4096).
@@ -305,11 +350,7 @@ return {
         url = "http://localhost:4096",
         connect = true,
         start = function()
-          if server_running() then
-            focus_opencode()
-            return
-          end
-          require("snacks.terminal").open(OC_CMD, OC_OPTS)
+          focus_opencode()
         end,
       },
       providers = {
