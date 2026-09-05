@@ -246,6 +246,14 @@ return {
   -- Description: A Neovim plugin for creating a customizable dashboard.
   {
     "folke/snacks.nvim",
+    init = function()
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "snacks_dashboard",
+        callback = function()
+          vim.b.miniai_disable = true
+        end,
+      })
+    end,
     opts = {
       notifier = {
         enabled = true,

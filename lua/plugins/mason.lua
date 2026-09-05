@@ -39,6 +39,17 @@ if not is_termux then
     "php-debug-adapter", -- PHP (Xdebug)
     "java-debug-adapter",
     "java-test",
+
+    -- DAP extras (lua/nvim-dap/)
+    -- NOTA: haskell-debug-adapter, erlang-debugger, ocamlearlybird y rdbg se
+    -- compilan DESDE FUENTE y requieren toolchain de sistema (cabal, rebar3,
+    -- opam, ruby). No van en ensure_installed: Mason reintentaría y fallaría en
+    -- cada arranque. Doc: nvim/.config/nvim/lua/nvim-dap/README.md
+    "bash-debug-adapter",
+    "dart-debug-adapter",
+    "kotlin-debug-adapter",
+    "local-lua-debugger-vscode",
+    "perl-debug-adapter",
   })
 end
 
