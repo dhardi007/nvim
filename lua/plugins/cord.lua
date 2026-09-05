@@ -124,7 +124,7 @@ end
 return {
   "vyfor/cord.nvim",
   build = function(plugin)
-    vim.cmd("Cord update")
+    pcall(vim.cmd, "Cord update")
     require("dizzi.cord_patch").patch_cord(plugin.dir or plugin.to)
   end,
   event = "VeryLazy",

@@ -6,7 +6,7 @@
 return {
   -- 1. Apuntar a tu fork con los parches nativos
   "dizzi1222/neocursor.nvim",
-  -- commit = "d43b516", -- Opcional: Lazy.nvim descargará siempre lo último de main.
+  -- commit = "0d0aede7", -- Opcional: Lazy.nvim descargará siempre lo último de main.
 
   event = "VeryLazy", -- Cargar al arranque: NO InsertEnter (bloquea el disparo en normal)
   opts = {
@@ -67,20 +67,26 @@ return {
       end
     end
 
-    -- Mapeamos tanto <S-Tab> como <Esc> para unificar el comportamiento
-    vim.keymap.set(
-      { "n", "i", "v" },
-      "<S-Tab>",
-      dismiss_esc,
-      { noremap = true, silent = true, desc = "neocursor: dismiss and clear hlsearch" }
-    )
+    -- Mapeamos tanto <S-Tab> como <Esc> para unificar el comportamiento.
+    -- ⚠️ LazyVim registra su propio `<Esc>` expr en `User VeryLazy`
+    -- (LazyVim/config/init.lua → keymaps.lua:52) DESPUÉS de cargar este plugin,
+    -- y lo pisa. vim.schedule() aplaza el re-mapeo al final del tick, ganándole a
+    -- la carrera: así el dismiss de neocursor vuelve a ganar en NORMAL/VISUAL.
+    vim.schedule(function()
+      vim.keymap.set(
+        { "n", "i", "v" },
+        "<S-Tab>",
+        dismiss_esc,
+        { noremap = true, silent = true, desc = "neocursor: dismiss and clear hlsearch" }
+      )
 
-    vim.keymap.set(
-      { "n", "i", "v" },
-      "<Esc>",
-      dismiss_esc,
-      { noremap = true, silent = true, desc = "neocursor: dismiss and clear hlsearch" }
-    )
+      vim.keymap.set(
+        { "n", "i", "v" },
+        "<Esc>",
+        dismiss_esc,
+        { noremap = true, silent = true, desc = "neocursor: dismiss and clear hlsearch" }
+      )
+    end)
 
     -- 👻 Sugerencia predictiva en NORMAL: CursorHold pide la predicción (jump/ghost),
     -- replicando el disparo que Cursor hace al leer código. Evita conflictos con

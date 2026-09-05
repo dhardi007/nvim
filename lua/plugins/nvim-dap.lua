@@ -465,7 +465,7 @@ return {
       local function find_executable()
         local file = vim.fn.expand("%:p")
         if file == "" then
-          return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+          return nil
         end
         local dir = vim.fn.fnamemodify(file, ":h")
         local name = vim.fn.fnamemodify(file, ":t:r")
@@ -477,11 +477,16 @@ return {
           dir .. "/" .. name,
         }
         for _, path in ipairs(candidates) do
-          if vim.fn.filereadable(path) == 1 then
+          -- OJO: filereadable() devuelve 1 TAMBIEN para directorios (ej.
+          -- "src/pages" del front se lanzaba como ejecutable). Comprobar
+          -- isdirectory() evita tratar carpetas como binario.
+          if vim.fn.filereadable(path) == 1 and vim.fn.isdirectory(path) == 0 then
             return path
           end
         end
-        return vim.fn.input("Path to executable: ", vim.fn.getcwd() .. "/", "file")
+        -- Sin binario: nil. El preflight (auto-build con confirmacion) decide
+        -- que hacer en vez de pedir input con el cwd del workspace.
+        return nil
       end
 
       -- C/C++/Rust (codelldb)
@@ -495,7 +500,11 @@ return {
         request = "launch",
         name = "Launch file",
         program = find_executable,
-        cwd = "${workspaceFolder}",
+        -- cwd al dir del buffer (NO ${workspaceFolder}: evita heredar el
+        -- workspace del front y lanzar basura de ahi).
+        cwd = function()
+          return buf_dir()
+        end,
         stopAtEntry = false,
       }
       dap.configurations.c = { native_cfg }
@@ -625,20 +634,35 @@ return {
       -- actual (no al cargar el config, que capturaria el primer archivo).
       local build_hints = {
         rust = function()
+          local src = vim.fn.fnamemodify(vim.fn.expand("%:t"), ":t")
+          local name = vim.fn.fnamemodify(src, ":t:r")
+          if name == "" then
+            name = "main"
+          end
           return {
-            "cd " .. buf_dir() .. " && rustc -g -o build/main main.rs",
+            "cd " .. buf_dir() .. " && rustc -g -o build/" .. name .. " " .. src,
             "Falta compilar el binario que lanza codelldb.",
           }
         end,
         c = function()
+          local src = vim.fn.fnamemodify(vim.fn.expand("%:t"), ":t")
+          local name = vim.fn.fnamemodify(src, ":t:r")
+          if name == "" then
+            name = "main"
+          end
           return {
-            "cd " .. buf_dir() .. " && g++ -g -o build/main main.cpp",
+            "cd " .. buf_dir() .. " && gcc -g -o build/" .. name .. " " .. src,
             "Falta compilar el binario nativo.",
           }
         end,
         cpp = function()
+          local src = vim.fn.fnamemodify(vim.fn.expand("%:t"), ":t")
+          local name = vim.fn.fnamemodify(src, ":t:r")
+          if name == "" then
+            name = "main"
+          end
           return {
-            "cd " .. buf_dir() .. " && g++ -g -o build/main main.cpp",
+            "cd " .. buf_dir() .. " && g++ -g -o build/" .. name .. " " .. src,
             "Falta compilar el binario nativo.",
           }
         end,
@@ -696,13 +720,30 @@ return {
         end,
       }
 
-      -- Devuelve el hint { comando, descripcion } para el filetype actual (o nil)
+      -- Devuelve el hint { comando, descripcion } para el filetype actual (o nil).
+      -- Fuente UNICA: 1) build_hints del plugin principal; 2) native.lua;
+      -- 3) modulos extras (bash, cobol, dart, ...) que exponen `get_hint()`.
+      -- Asi cada lenguaje mantiene SU hint independiente pero <leader>dx/F8
+      -- queda unificado (sin re-definiciones que se pisen entre si).
       local function get_build_hint()
         local maker = build_hints[vim.bo.filetype]
-        if not maker then
-          return nil
+        if maker then
+          return maker()
         end
-        return maker()
+        local extra_langs = {
+          "bash", "cobol", "dart", "erlang", "haskell", "kotlin", "lua",
+          "native", "ocaml", "perl", "ruby",
+        }
+        for _, lang in ipairs(extra_langs) do
+          local ok_mod, mod = pcall(require, "nvim-dap." .. lang)
+          if ok_mod and type(mod.get_hint) == "function" then
+            local res = mod.get_hint(vim.bo.filetype)
+            if res and type(res) == "table" and res[1] then
+              return { res[1], res[2] or "Requiere build/requisito previo." }
+            end
+          end
+        end
+        return nil
       end
 
       -- Muestra la notificacion fallback con el comando/requsito correcto.
@@ -729,48 +770,124 @@ return {
       -- ⚠️ Definida ANTES de dap_continue_with_preflight: en Lua un `local
       -- function` solo es visible despues de su declaracion; llamarlo antes
       -- resolvia a un global nil -> E5108 "attempt to call global 'preflight_check'".
-      local function preflight_check()
-        local ft = vim.bo.filetype
-        if ft == "rust" or ft == "c" or ft == "cpp" then
-          local file = vim.fn.expand("%:p")
-          local dir = vim.fn.fnamemodify(file, ":h")
-          local name = vim.fn.fnamemodify(file, ":t:r")
-          local exe = dir .. "/build/" .. name
-          if vim.fn.filereadable(exe) ~= 1 then
-            vim.notify(
-              "No se encontro " .. exe .. "\n▶ " .. build_hints[ft]()[1],
-              vim.log.levels.WARN,
-              { title = "nvim-dap: compilar antes de debuggear" }
-            )
-          end
-        elseif ft == "cs" then
-          local root = buf_dir()
-          local matches = vim.fn.glob(root .. "/bin/Debug/**/*.dll", 0, 1)
-          local has_dll = type(matches) == "table" and #matches > 0
-          if not has_dll then
-            vim.notify(
-              "No hay .dll en bin/Debug\n▶ " .. build_hints.cs()[1],
-              vim.log.levels.WARN,
-              { title = "nvim-dap: compilar antes de debuggear" }
-            )
-          end
+      -- ▸ AUTO-BUILD con confirmacion (F2)
+      -- Cuando el artefacto (binario/.dll) no existe, <leader>dc ofrece
+      -- compilar con el comando correcto y lanza el debug solo tras exito.
+      -- c/cpp/rust → gcc/g++/rustc; cs → dotnet build; cobol → cobc.
+      -- build_specs[ft] = function() -> nil | {
+      --   missing = bool,          -- true si falta algo que compilar
+      --   cmd = string,            -- comando shell para el build
+      --   create_first = bool,     -- opcional: hay que generar proyecto (dotnet new)
+      -- }
+      -- Usa el NOMBRE real del buffer (no "main" hardcodeado) para que mida
+      -- igual que find_executable() (build/<name>, o ./<name> en cobol).
+      local function buffer_src_name()
+        local src = vim.fn.fnamemodify(vim.fn.expand("%:t"), ":t")
+        local name = vim.fn.fnamemodify(src, ":t:r")
+        if name == "" then
+          name = "main"
         end
+        return src, name
       end
 
-      -- Continue CON preflight: avisa lo que falta antes de lanzar (Rust/C/C++,
-      -- C#). Se enlaza a <leader>dc / <leader>da / <F9> en vez de wrappear
-      -- vim.notify (que rompe Noice). preflight_check esta definida arriba.
-      -- En PHP ademas dispara xdg-open para activar Xdebug (el adapter solo
-      -- escucha; necesita una request HTTP al servidor built-in para conectar).
+      local function has_files(patterns)
+        for _, p in ipairs(patterns) do
+          local matches = vim.fn.glob(buf_dir() .. "/" .. p, 0, 1)
+          if type(matches) == "table" and #matches > 0 then
+            return true
+          end
+        end
+        return false
+      end
+
+      local build_specs = {
+        cpp = function()
+          local src, name = buffer_src_name()
+          return {
+            missing = vim.fn.filereadable(buf_dir() .. "/build/" .. name) ~= 1,
+            cmd = "mkdir -p build && g++ -g -o build/" .. name .. " " .. src,
+          }
+        end,
+        c = function()
+          local src, name = buffer_src_name()
+          return {
+            missing = vim.fn.filereadable(buf_dir() .. "/build/" .. name) ~= 1,
+            cmd = "mkdir -p build && gcc -g -o build/" .. name .. " " .. src,
+          }
+        end,
+        rust = function()
+          local src, name = buffer_src_name()
+          return {
+            missing = vim.fn.filereadable(buf_dir() .. "/build/" .. name) ~= 1,
+            cmd = "mkdir -p build && rustc -g -o build/" .. name .. " " .. src,
+          }
+        end,
+        cs = function()
+          local has_proj = has_files({ "*.csproj", "*.sln" })
+          if not has_proj then
+            return {
+              missing = true,
+              create_first = true,
+              cmd = "dotnet new console --use-program-main",
+            }
+          end
+          local dlls = vim.fn.glob(buf_dir() .. "/bin/Debug/**/*.dll", 0, 1)
+          local has_dll = type(dlls) == "table" and #dlls > 0
+          return {
+            missing = not has_dll,
+            cmd = "dotnet build",
+          }
+        end,
+        cobol = function()
+          local src, name = buffer_src_name()
+          return {
+            missing = vim.fn.filereadable(buf_dir() .. "/" .. name) ~= 1,
+            cmd = "cobc -g -o " .. name .. " " .. src,
+          }
+        end,
+      }
+
+      -- Continue con preflight: si falta compilar, pregunta con vim.ui.select.
+      -- "Compilar y lanzar" corre el build (jobstart) y tras exit 0 lanza DAP;
+      -- "Solo ver hint" muestra la guia; "Cancelar" no hace nada.
+      -- En PHP ya NO se dispara xdg-open/aviso en cada continue (el evento
+      -- `initialized` avisa una sola vez por sesion).
       local function dap_continue_with_preflight()
-        preflight_check()
-        if vim.bo.filetype == "php" and vim.fn.executable("xdg-open") == 1 then
-          local script = vim.fn.fnamemodify(vim.fn.expand("%:t"), ":t")
-          vim.fn.jobstart({ "xdg-open", "http://localhost:8000/" .. script }, { detach = true })
-          -- Reutiliza el hint completo de build de PHP (requisito Xdebug + comando
-          -- del servidor + como disparar la request) para recordar que el servidor
-          -- con Xdebug debe estar levantado ANTES, si no no conecta al 9003.
-          notify_build_hint()
+        local spec_maker = build_specs[vim.bo.filetype]
+        local spec = spec_maker and spec_maker() or nil
+        if spec and spec.missing then
+          local label = spec.create_first and "Crear proyecto y lanzar" or "Compilar y lanzar"
+          vim.ui.select({ label, "Solo ver hint", "Cancelar" }, {
+            prompt = "[" .. vim.bo.filetype .. "] falta el artefacto de build",
+          }, function(choice)
+            if not choice or choice == "Cancelar" then
+              return
+            end
+            if choice == "Solo ver hint" then
+              notify_build_hint()
+              return
+            end
+            vim.notify("▶ " .. spec.cmd, vim.log.levels.INFO, { title = "nvim-dap: build" })
+            vim.fn.jobstart({ "sh", "-lc", spec.cmd }, {
+              cwd = buf_dir(),
+              on_exit = function(_, code)
+                vim.schedule(function()
+                  if code == 0 then
+                    vim.notify("Build OK. Lanzando debug...", vim.log.levels.INFO, { title = "nvim-dap" })
+                    dap.continue()
+                  else
+                    vim.notify(
+                      "Build falló (exit " .. tostring(code) .. "): " .. spec.cmd,
+                      vim.log.levels.ERROR,
+                      { title = "nvim-dap: build" }
+                    )
+                    notify_build_hint()
+                  end
+                end)
+              end,
+            })
+          end)
+          return
         end
         dap.continue()
       end
@@ -779,8 +896,15 @@ return {
       -- hint correcto. Cuando el binario no existe (codelldb: "is not a valid
       -- executable"), falta debugpy, o el adapter no responde, el evento
       -- "output" (stderr) lo reporta. Filtramos patrones conocidos por lenguaje.
+      -- UN AVISO por sesion: sin esto, un continue que emite warnings (ej. PHP
+      -- o Xdebug) re-dispara el hint en cada output = spam.
+      local notified_on_session = {}
       dap.listeners.after.event["output"] = function(session, body)
         if not body or type(body) ~= "table" then
+          return
+        end
+        local session_key = session and session.id or "anon"
+        if notified_on_session[session_key] then
           return
         end
         local out = body.output or ""
@@ -792,6 +916,7 @@ return {
           or out:match("0x80070002")
           or out:match("No such file or directory")
         if known and build_hints[ft] then
+          notified_on_session[session_key] = true
           notify_build_hint()
         end
       end
@@ -847,6 +972,22 @@ return {
         end
       end
       vim.keymap.set("n", "<F8>", dap_hint_keymap, { desc = "DAP: mostrar hint de build" })
+
+      -- ══════════════════════════════════════════════════════════
+      -- LENGUAJES ADICIONALES (Mason) — SEPARADOS EN lua/nvim-dap/
+      -- Bash, COBOL, Dart, Haskell, Kotlin, Lua, Perl, Ruby, etc.
+      -- Cada lenguaje en su propio modulo: lua/nvim-dap/<lenguaje>.lua
+      -- ══════════════════════════════════════════════════════════
+      local ok_extras, err_extras = pcall(require, "nvim-dap.extras")
+      if not ok_extras then
+        vim.notify(
+          "nvim-dap/extras no cargó: " .. tostring(err_extras),
+          vim.log.levels.ERROR,
+          { title = "nvim-dap: extras" }
+        )
+      else
+        err_extras.setup(dap) -- pcall: (true, module); el modulo va en el 2º retorno
+      end
     end,
   },
 }

@@ -36,8 +36,10 @@ end
 -- MISMA instancia: snacks.terminal indexa la terminal por {cmd, cwd, env,
 -- count}. Fijamos una sola cwd al arrancar para que el id sea estable; así, al
 -- cambiar de proyecto/directorio SIEMPRE se enfoca/oculta la misma sesión de
--- opencode y nunca se crea una segunda.
-local OC_CMD = "opencode --port"
+-- opencode y nunca se crea una segunda. El puerto se fija (4096) para que
+-- coincida con `url` del server y el plugin conecte SIEMPRE a la misma
+-- instancia (sin auto-discovery).
+local OC_CMD = "opencode --port 4096"
 local OC_OPTS = {
   cwd = vim.loop.cwd(), -- estable: no cambiar con el cwd actual de Neovim
   win = {
@@ -60,7 +62,9 @@ local function focus_opencode()
 end
 
 return {
-  "NickvanDyke/opencode.nvim",
+  -- 1. Apuntar a tu fork con los parches nativos
+  "dizzi1222/opencode.nvim",
+  -- commit = "0d0aede7", -- Opcional: Lazy.nvim descargará siempre lo último de main.
   name = "opencode-nick",
   dependencies = {
     { "folke/snacks.nvim", opts = { input = {}, picker = {}, terminal = {} } },
@@ -286,23 +290,25 @@ return {
     -- `opencode --port`, se acumulan procesos huérfanos y el puerto se satura
     -- -> el envío del buffer falla ("solo funciona 1 vez y luego mas nunca").
     local function server_running()
-      -- comprobar si algo responde el endpoint del server
-      local ok = vim.fn.system(
-        "curl -sf -m 2 -o /dev/null http://localhost:4096/" .. (vim.fn.exists("*systemlist") and "" or "")
-      )
+      local ok = vim.fn.system("curl -sf -m 2 -o /dev/null http://localhost:4096/")
       return vim.v.shell_error == 0 and ok == ""
     end
 
     vim.g.opencode_opts = {
       server = {
-        -- Conecta DIRECTO al server opencode --port existente de Termux (4096).
+        -- Conecta DIRECTO al server opencode --port existente (4096).
         -- Sin `url`, el plugin usa auto-discovery (pgrep+lsof+CWD overlap) que
-        -- en Termux falla (lsof ausente / CWD distinto) -> crea OTRA instancia
-        -- en vez de usar el buffer existente. Con `url` ya conecta siempre a la
-        -- misma instancia que abre OC_CMD.
+        -- en termux falla (lsof ausente / CWD distinto) y en desktop crea OTRAS
+        -- instancias al cambiar de CWD -> "No OpenCode servers found with
+        -- overlapping CWD" y sessões nuevas. Con `url`+`connect` SIEMPRE usa la
+        -- misma instancia que abre OC_CMD (puerto 4096 fijo).
         url = "http://localhost:4096",
         connect = true,
         start = function()
+          if server_running() then
+            focus_opencode()
+            return
+          end
           require("snacks.terminal").open(OC_CMD, OC_OPTS)
         end,
       },
